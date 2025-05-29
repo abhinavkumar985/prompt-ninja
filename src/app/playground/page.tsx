@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'; // Keep Button import
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { LucideIcon } from 'lucide-react'; // For strategy icons if used
+import type { LucideIcon } from 'lucide-react';
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -30,7 +30,6 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
     }))
     .sort((a, b) => b.value.length - a.value.length); // Longer matches first
   
-  // Moved regexParts initialization before its use
   const regexParts = configurableParams.map(p =>
     p.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
   );
@@ -67,9 +66,6 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
 export default function PlaygroundPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
-  const [inputValues, setInputValues] = useState<Record<string, string>>({});
-  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
   const { toast } = useToast();
   const [isCopied, setIsCopied] = useState(false);
 
@@ -78,19 +74,24 @@ export default function PlaygroundPage() {
     {}
   );
 
-  useEffect(() => {
-    document.title = 'Prompt Generator - PromptNin';
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
     const strategyIdFromQuery = searchParams.get('strategy');
     if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
-      setSelectedStrategyId(strategyIdFromQuery);
-    } else if (PROMPT_STRATEGIES.length > 0 && !selectedStrategyId) {
-      setSelectedStrategyId(PROMPT_STRATEGIES[0].id);
+      return strategyIdFromQuery;
     }
-  }, [searchParams, selectedStrategyId]);
+    return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
+  });
 
   const selectedStrategy = useMemo(() => {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
+
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+
+  useEffect(() => {
+    document.title = 'Prompt Generator - PromptNin';
+  }, []);
 
   useEffect(() => {
     if (selectedStrategy) {
@@ -106,15 +107,17 @@ export default function PlaygroundPage() {
           newDefaultValues[param.name] = '';
         }
       });
-      // Ensure main_input is always initialized
+      // Ensure main_input is always initialized, potentially from its own default or empty
       if (newDefaultValues['main_input'] === undefined) {
-        newDefaultValues['main_input'] = selectedStrategy.parameters.find(p => p.name === 'main_input')?.defaultValue || '';
+         const mainInputParam = selectedStrategy.parameters.find(p => p.name === 'main_input');
+         newDefaultValues['main_input'] = mainInputParam?.defaultValue || '';
       }
       setInputValues(newDefaultValues);
     } else {
-      setInputValues({});
+      setInputValues({}); // Clear inputs if no strategy is selected
     }
   }, [selectedStrategy, allStrategyConfigs]);
+
 
   const handleInputChange = (paramName: string, value: string) => {
     setInputValues(prev => ({ ...prev, [paramName]: value }));
@@ -122,6 +125,8 @@ export default function PlaygroundPage() {
 
   const handleStrategyChange = (strategyId: string) => {
     setSelectedStrategyId(strategyId);
+    // Update URL query param without full page reload for better UX
+    router.push(`/playground?strategy=${strategyId}`, { scroll: false });
   };
 
   const generatePromptCallback = useCallback(() => {
@@ -141,6 +146,7 @@ export default function PlaygroundPage() {
     generatePromptCallback();
   }, [inputValues, generatePromptCallback]);
 
+
   const handleCopyPrompt = async () => {
     if (!generatedPrompt) return;
     try {
@@ -151,7 +157,7 @@ export default function PlaygroundPage() {
         description: "The prompt has been copied successfully.",
         duration: 3000,
       });
-      setTimeout(() => setIsCopied(false), 2000);
+      setTimeout(() => setIsCopied(false), 2000); // Reset copied state
     } catch (err) {
       console.error('Failed to copy: ', err);
       toast({
@@ -165,7 +171,8 @@ export default function PlaygroundPage() {
 
   const renderParameterInput = (param: PromptParameter) => {
     const value = inputValues[param.name] || '';
-    if (param.name === 'main_input' || !param.isConfigurable) return null; // Only render configurable, non-main_input params here
+    // Only render non-main_input, configurable parameters here (others handled by main textarea or not shown)
+    if (param.name === 'main_input' || !param.isConfigurable) return null;
 
     return (
       <div key={param.name} className="space-y-1.5 mb-4">
@@ -204,6 +211,7 @@ export default function PlaygroundPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          {/* Left Column */}
           <section className="flex flex-col gap-4 p-4">
             <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em]">Input your code or error</h3>
             <Textarea
@@ -240,16 +248,18 @@ export default function PlaygroundPage() {
                       <div className="whitespace-pre-wrap text-xs opacity-90 mb-3">
                         {generateHighlightedExamplePrompt(strategy)}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full border-primary text-primary hover:bg-primary/10 hover:text-primary"
-                        onClick={() => router.push(`/settings?strategy=${strategy.id}`)}
-                        title={`Update default config for ${strategy.name}`}
-                      >
-                        <span className="material-icons text-base mr-1.5">tune</span>
-                        Update Config
-                      </Button>
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
+                          onClick={() => router.push(`/settings?strategy=${strategy.id}`)}
+                          title={`Update default config for ${strategy.name}`}
+                        >
+                          <span className="material-icons text-base mr-1.5">tune</span>
+                          Update Config
+                        </Button>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -275,6 +285,7 @@ export default function PlaygroundPage() {
             )}
           </section>
 
+          {/* Right Column */}
           <section className="flex flex-col gap-4 p-4 bg-card rounded-lg relative">
             <div className="flex justify-between items-center">
                 <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
@@ -283,7 +294,7 @@ export default function PlaygroundPage() {
                     disabled={!generatedPrompt || isCopied}
                     variant="default"
                     size="sm"
-                    className="font-semibold absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground" // No absolute positioning here
                 >
                     <span className="material-icons text-base mr-1.5">content_copy</span>
                     Copy

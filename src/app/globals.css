@@ -4,15 +4,15 @@
 
 @layer base {
   :root {
-    /* Dark theme variables (will be default) */
+    /* Dark theme variables (default) */
     --background: 210 10% 7%; /* #121416 */
     --foreground: 210 43% 86%; /* #dce8f3 */
 
     --card: 210 11% 11%; /* #1a1d20 */
-    --card-foreground: 210 43% 86%;
+    --card-foreground: 210 43% 86%; /* #dce8f3 */
 
-    --popover: 210 11% 11%;
-    --popover-foreground: 210 43% 86%;
+    --popover: 210 11% 11%; /* #1a1d20 */
+    --popover-foreground: 210 43% 86%; /* #dce8f3 */
 
     /* Primary for CTAs/selected items (light on dark) */
     --primary: 210 43% 86%; /* #dce8f3 */
@@ -20,22 +20,22 @@
 
     /* Secondary for less prominent interactive elements */
     --secondary: 210 7% 20%; /* #2c3135 */
-    --secondary-foreground: 210 8% 81%; /* text-gray-300 like */
+    --secondary-foreground: 210 20% 75%; /* #a2abb3 approx based on mockup */
     
     --muted: 210 8% 25%; /* Darker muted background */
-    --muted-foreground: 210 8% 55%; /* Lighter muted text (gray-400 like) */
+    --muted-foreground: 208 9% 67%; /* #a2abb3 - For general muted text */
 
-    --accent: 207 41% 62%; /* #7aa5c7 for links */
-    --accent-foreground: 207 41% 62%; /* Link color */
+    --accent: 207 41% 62%; /* #7aa5c7 for links or highlights */
+    --accent-foreground: 210 43% 86%; /* #dce8f3 - Text on accent */
 
     --destructive: 0 63% 31%; /* Dark red */
     --destructive-foreground: 0 0% 98%; /* Light text on dark red */
 
     --border: 210 7% 20%; /* #2c3135 */
     --input: 213 8% 16%; /* #25292d */
-    --ring: 207 41% 62%; /* Accent color for focus rings */
+    --ring: 210 43% 86%; /* #dce8f3 - For focus rings, matches new primary */
 
-    --radius: 0.5rem;
+    --radius: 0.5rem; /* 8px */
 
     --chart-1: 207 41% 62%;
     --chart-2: 210 43% 70%;
@@ -43,47 +43,41 @@
     --chart-4: 207 41% 50%;
     --chart-5: 210 43% 60%;
 
-    /* Sidebar variables - adjusted for dark theme */
-    --sidebar-background: 210 10% 9%; /* Slightly lighter than main bg */
+    /* Sidebar variables - kept for potential future use, aligned with dark theme */
+    --sidebar-background: 210 10% 9%; 
     --sidebar-foreground: 210 20% 75%;
-    --sidebar-primary: 210 43% 86%; /* Light primary for selected items */
-    --sidebar-primary-foreground: 210 10% 7%; /* Dark text on light primary */
-    --sidebar-accent: 210 7% 20%; /* Accent for hover */
+    --sidebar-primary: 210 43% 86%;
+    --sidebar-primary-foreground: 210 10% 7%;
+    --sidebar-accent: 210 7% 20%; 
     --sidebar-accent-foreground: 210 43% 86%;
     --sidebar-border: 210 7% 15%;
     --sidebar-ring: 207 41% 62%;
+
+    /* Additional color from mockup for footer text */
+    --muted-foreground-darker: 210 5% 51%; /* #737980 approx */
   }
 
   /* Light theme override (if ever needed via a class) */
   .light {
-    --background: 0 0% 100%;
-    --foreground: 220 10% 25%;
+    --background: 0 0% 100%; /* white */
+    --foreground: 220 10% 25%; /* dark gray for text */
     --card: 0 0% 100%;
     --card-foreground: 220 10% 25%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 10% 25%;
-    --primary: 196 77% 53%; 
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 15% 90%;
-    --secondary-foreground: 220 10% 20%;
+    --primary: 196 77% 53%; /* PromptNin blue from PRD */
+    --primary-foreground: 0 0% 100%; /* white */
+    --secondary: 220 15% 90%; /* light gray */
+    --secondary-foreground: 220 10% 20%; /* dark gray */
     --muted: 220 15% 90%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 200 100% 95%;
-    --accent-foreground: 196 77% 53%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 10% 88%;
-    --input: 220 10% 92%;
-    --ring: 196 77% 53%;
-
-    --sidebar-background: 220 10% 15%; 
-    --sidebar-foreground: 220 15% 80%;
-    --sidebar-primary: 196 77% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 100% 95%;
-    --sidebar-accent-foreground: 196 77% 53%;
-    --sidebar-border: 220 10% 25%;
-    --sidebar-ring: 196 77% 53%;
+    --muted-foreground: 220 10% 45%; /* medium gray */
+    --accent: 45 93% 58%; /* #F9A825 - Yellow/Orange from PRD */
+    --accent-foreground: 220 10% 20%; /* dark gray */
+    --destructive: 0 84.2% 60.2%; /* red */
+    --destructive-foreground: 0 0% 98%; /* very light gray */
+    --border: 220 10% 88%; /* light gray border */
+    --input: 220 10% 92%; /* very light gray input bg */
+    --ring: 196 77% 53%; /* PromptNin blue for focus rings */
   }
 }
 
@@ -97,11 +91,27 @@
 }
 
 @layer components {
-  .gradient-text {
-    /* This gradient might need adjustment if it's to be used on a dark background */
-    /* For now, keeping it as is, but it's designed for light backgrounds */
+  .gradient-text { /* Kept from previous, might not be used by new landing page */
     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+
+  .gradient-bg {
+    background-image: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 50%, hsl(var(--background)) 100%);
+  }
+
+  .hero-gradient-bg { /* As per mockup style tag */
+    background-image: linear-gradient(rgba(18, 20, 22, 0.8) 0%, rgba(18, 20, 22, 0.6) 50%, rgba(18, 20, 22, 0.8) 100%),
+      url("https://images.unsplash.com/photo-1550745165-9bc0b252726c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80");
+  }
+
+  .feature-icon { /* As per mockup style tag */
+    background-color: rgba(220, 232, 243, 0.1); /* hsl(var(--foreground)) with alpha */
+    border-radius: 50%;
+    padding: 0.5rem; /* 8px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

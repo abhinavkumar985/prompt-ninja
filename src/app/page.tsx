@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PROMPT_STRATEGIES } from "@/lib/prompt-strategies";
+// PROMPT_STRATEGIES import is not strictly needed here if displayedStrategiesInfo is self-contained for landing page visuals
+// import { PROMPT_STRATEGIES } from "@/lib/prompt-strategies"; 
 import Link from "next/link";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ArrowRight, ListChecks, User, ListOrdered, Lock } from "lucide-react";
@@ -9,7 +10,7 @@ import { ArrowRight, ListChecks, User, ListOrdered, Lock } from "lucide-react";
 // Strategies to display on the landing page, matching the image
 const displayedStrategiesInfo = [
   {
-    id: "few-shot",
+    id: "few-shot", // Used as key for mapping
     title: "Few-shot",
     description: "Provide examples to guide the AI.",
     icon: ListChecks,
@@ -54,21 +55,21 @@ export default function HomePage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {displayedStrategiesInfo.map((strategy) => {
-            // Find the full strategy from PROMPT_STRATEGIES to make sure icon and link are correct
-            // const fullStrategy = PROMPT_STRATEGIES.find(s => s.id === strategy.linkId);
-            const IconComponent = strategy.icon; // Use icon from displayedStrategiesInfo
+            const IconComponent = strategy.icon;
 
             return (
               <Link key={strategy.id} href={`/playground?strategy=${strategy.linkId}`} passHref>
-                <Card className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col items-center py-6 px-4 cursor-pointer">
-                  <CardHeader className="p-0 mb-3">
-                    <div className="mx-auto bg-primary/10 p-3 rounded-lg w-fit">
-                      <IconComponent className="h-7 w-7 text-primary" />
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 h-full flex flex-col text-center cursor-pointer overflow-hidden">
+                  <CardHeader className="items-center pt-6 pb-3"> {/* Centered icon, adjusted padding */}
+                    <div className="bg-primary/10 p-3 rounded-lg"> {/* Icon container */}
+                      <IconComponent className="h-8 w-8 text-primary" /> {/* Slightly larger icon */}
                     </div>
                   </CardHeader>
-                  <CardContent className="p-0 flex-grow flex flex-col justify-center">
-                    <p className="font-semibold text-lg text-foreground mb-1">{strategy.title}</p>
-                    <p className="text-xs text-muted-foreground leading-tight">{strategy.description}</p>
+                  <CardContent className="flex flex-col flex-grow pb-6 px-4 items-center"> {/* Content fills space, centered */}
+                    <CardTitle className="text-lg font-semibold mb-2">{strategy.title}</CardTitle> {/* Adjusted margin */}
+                    <CardDescription className="text-sm leading-relaxed"> {/* Adjusted leading for better readability */}
+                      {strategy.description}
+                    </CardDescription>
                   </CardContent>
                 </Card>
               </Link>
@@ -84,7 +85,7 @@ export default function HomePage() {
       </Button>
 
       <footer className="mt-16">
-        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5"> {/* Added justify-center here */}
           <Lock className="h-3 w-3" /> We don&apos;t use AI or save your data. Everything runs in your browser.
         </p>
       </footer>

@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { LogoIcon } from '@/components/icons/LogoIcon';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Settings, BookOpen, Wand2, Github } from 'lucide-react'; 
+import { Menu, Settings, BookOpen, Wand2, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/playground', label: 'Playground', icon: Wand2 },
-  { href: '/strategy-library', label: 'Strategies', icon: BookOpen },
+  // { href: '/strategy-library', label: 'Strategies', icon: BookOpen }, // Removed
   { href: '/contribution-guide', label: 'Contribute', icon: BookOpen, highlight: true },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -75,7 +75,7 @@ export function Header() {
                     href={item.href}
                     className={cn(
                       "flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium",
-                      item.highlight 
+                      item.highlight
                         ? "bg-accent text-accent-foreground" // Mobile highlighted item
                         : "text-foreground hover:bg-accent hover:text-accent-foreground" // Mobile standard item
                     )}

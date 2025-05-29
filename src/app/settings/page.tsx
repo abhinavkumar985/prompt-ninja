@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Save, SlidersHorizontal, Settings2, RotateCcw } from 'lucide-react';
+import { Save, SlidersHorizontal, Settings2, RotateCcw, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
@@ -173,21 +173,24 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary"/>}
-                  Configure: {selectedStrategy.name}
+                  {selectedStrategy.name}
                 </CardTitle>
-                <CardDescription>Set default values for the configurable parameters of this strategy. These will be used in the Playground.</CardDescription>
+                <CardDescription className="pt-1">{selectedStrategy.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {configurableParameters.length > 0 ? (
-                  configurableParameters.map(param => (
-                    <div key={param.name} className="space-y-1.5">
-                      <Label htmlFor={param.name} className="text-sm font-medium">{param.label}</Label>
-                      {renderParameterInput(param)}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
-                )}
+                <div> {/* Wrapper for configurable params and title */}
+                  <h3 className="text-lg font-semibold mb-3 text-foreground">Default Inputs Configuration</h3>
+                  {configurableParameters.length > 0 ? (
+                    configurableParameters.map(param => (
+                      <div key={param.name} className="space-y-1.5 mb-4"> {/* Added mb-4 for spacing between params */}
+                        <Label htmlFor={param.name} className="text-sm font-medium">{param.label}</Label>
+                        {renderParameterInput(param)}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
+                  )}
+                </div>
                 
                 {configurableParameters.length > 0 && (
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -199,13 +202,36 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 )}
+
+                {selectedStrategy.example && (
+                  <div className="pt-6 mt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-foreground">
+                      <Info className="h-5 w-5 text-primary"/> Example Usage
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">An example of how this strategy can be used.</p>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium text-sm mb-1 text-foreground">Example Inputs:</h4>
+                        <pre className="p-3 bg-muted/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border">
+                          {JSON.stringify(selectedStrategy.example.inputs, null, 2)}
+                        </pre>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm mb-1 text-foreground">Example Output Prompt:</h4>
+                        <pre className="p-3 bg-muted/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border">
+                          {selectedStrategy.example.output}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </>
           ) : (
-             <CardHeader> {/* Keep CardHeader for consistent structure even when no strategy selected */}
+             <CardHeader>
               <CardTitle>No Strategy Selected</CardTitle>
-              <CardContent> {/* Added CardContent for consistent padding */}
-                <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs.</p>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs and view its details.</p>
               </CardContent>
             </CardHeader>
           )}

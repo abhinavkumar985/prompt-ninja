@@ -1,5 +1,28 @@
+
 import type { LucideIcon } from 'lucide-react';
-import { Code2, Users, MessageSquare, Zap, Edit3 } from 'lucide-react';
+import {
+  Users,
+  MessageSquare,
+  TerminalSquare,
+  Workflow,
+  Bug,
+  ClipboardList,
+  Zap,
+  GitCompareArrows,
+  BrainCircuit,
+  Target,
+  FileText,
+  ListOrdered,
+  ListChecks,
+  GitCommitVertical,
+  LayoutGrid,
+  Wrench,
+  Lightbulb,
+  MessageCircleQuestion,
+  Filter,
+  Anchor,
+  Binary // Added Binary as a potential icon
+} from 'lucide-react';
 
 export interface PromptParameter {
   name: string;
@@ -25,77 +48,150 @@ export interface PromptStrategy {
   category?: string;
 }
 
-export const PROMPT_STRATEGIES: PromptStrategy[] = [
+const extractParameters = (template: string): PromptParameter[] => {
+  const regex = /\{(\w+)\}/g;
+  let match;
+  const params: PromptParameter[] = [];
+  const seenParams = new Set<string>();
+
+  while ((match = regex.exec(template)) !== null) {
+    const paramName = match[1];
+    if (!seenParams.has(paramName)) {
+      params.push({
+        name: paramName,
+        label: paramName.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), // Convert snake_case to Title Case
+        type: paramName.includes('code') || paramName.includes('summary') || paramName.includes('description') || paramName.includes('bullets') || paramName.includes('explanation') ? 'textarea' : 'text',
+        placeholder: `Enter ${paramName.replace(/_/g, ' ')}`,
+        rows: paramName.includes('code') || paramName.includes('summary') || paramName.includes('description') || paramName.includes('bullets') || paramName.includes('explanation') ? 4 : undefined,
+      });
+      seenParams.add(paramName);
+    }
+  }
+  return params;
+};
+
+const generateExample = (template: string, parameters: PromptParameter[]): { inputs: Record<string, string>; output: string } => {
+  const inputs: Record<string, string> = {};
+  let output = template;
+
+  parameters.forEach(param => {
+    const exampleValue = param.type === 'textarea' ? `Example content for ${param.label.toLowerCase()}.` : `example_${param.name}`;
+    inputs[param.name] = exampleValue;
+    const regex = new RegExp(`\\{${param.name}\\}`, 'g');
+    output = output.replace(regex, exampleValue);
+  });
+
+  return { inputs, output };
+};
+
+const newStrategiesData = [
   {
-    id: 'explain-code',
-    name: 'Explain Code',
-    description: 'Generates a prompt to ask an AI to explain a piece of code, with options for language, focus, and audience level.',
-    template: "Please explain the following ${language} code snippet. Focus on ${focusArea} and explain it as if I am ${audienceLevel}.\n\n```${language}\n${code}\n```\n\nKey aspects to cover:\n- Overall purpose of the code\n- Explanation of major functions/classes\n- How data flows through the snippet\n- Any potential edge cases or improvements (if applicable)",
-    parameters: [
-      { name: 'language', label: 'Programming Language', type: 'text', placeholder: 'e.g., Python, JavaScript', defaultValue: 'Python' },
-      { name: 'code', label: 'Code Snippet', type: 'textarea', placeholder: 'Paste your code here', rows: 8 },
-      { name: 'focusArea', label: 'Specific Focus Area', type: 'text', placeholder: 'e.g., specific algorithm, error handling, performance', defaultValue: 'overall functionality' },
-      { name: 'audienceLevel', label: 'Audience Level', type: 'select', options: ['a complete beginner', 'someone with basic programming knowledge', 'an intermediate developer', 'an expert'], defaultValue: 'someone with basic programming knowledge' },
-    ],
-    example: {
-      inputs: { language: 'Python', code: "def factorial(n):\n  if n == 0:\n    return 1\n  else:\n    return n * factorial(n-1)", focusArea: "recursion", audienceLevel: "a beginner" },
-      output: "Please explain the following Python code snippet. Focus on recursion and explain it as if I am a beginner.\n\n```Python\ndef factorial(n):\n  if n == 0:\n    return 1\n  else:\n    return n * factorial(n-1)\n```\n\nKey aspects to cover:\n- Overall purpose of the code\n- Explanation of major functions/classes\n- How data flows through the snippet\n- Any potential edge cases or improvements (if applicable)",
-    },
-    icon: Code2,
-    category: "Code Understanding",
-  },
-  {
-    id: 'persona-prompt',
-    name: 'Persona-Based Prompt',
-    description: 'Crafts a prompt by instructing the AI to adopt a specific persona for a given task.',
-    template: "Act as a ${persona}. Your task is to ${taskDescription}. Your response should be tailored for ${targetAudience} and delivered in ${outputFormat} format. Maintain a ${tone} tone throughout your response.",
-    parameters: [
-      { name: 'persona', label: 'Persona', type: 'text', placeholder: 'e.g., Senior Software Engineer, UI/UX Designer', defaultValue: 'Helpful AI Assistant' },
-      { name: 'taskDescription', label: 'Task Description', type: 'textarea', placeholder: 'e.g., review this code for security vulnerabilities and suggest improvements', rows: 4 },
-      { name: 'targetAudience', label: 'Target Audience', type: 'text', placeholder: 'e.g., junior developers, non-technical stakeholders', defaultValue: 'a general technical audience' },
-      { name: 'outputFormat', label: 'Output Format', type: 'text', placeholder: 'e.g., a bulleted list, a JSON object, a detailed report', defaultValue: 'a clear, concise summary' },
-      { name: 'tone', label: 'Tone', type: 'select', options: ['formal', 'informal', 'technical', 'encouraging', 'critical'], defaultValue: 'technical' },
-    ],
-    example: {
-      inputs: { persona: 'DevOps Engineer', taskDescription: 'suggest a CI/CD pipeline for a Node.js app hosted on AWS', targetAudience: 'a team of developers', outputFormat: 'markdown with code blocks', tone: 'formal' },
-      output: "Act as a DevOps Engineer. Your task is to suggest a CI/CD pipeline for a Node.js app hosted on AWS. Your response should be tailored for a team of developers and delivered in markdown with code blocks format. Maintain a formal tone throughout your response.",
-    },
+    jsonId: 1,
+    name: "Role Prompting",
+    templateContent: "You are a senior {language} developer. Review this function for {goal}.",
+    descriptionContent: "Simulate expert-level code review, debugging, or refactoring",
     icon: Users,
-    category: "Role Playing",
+    category: "Code Review"
   },
   {
-    id: 'generate-code',
-    name: 'Generate Code',
-    description: 'Generates a prompt to ask an AI to write code for a specific task, including language, libraries, and constraints.',
-    template: "Write a ${language} script to ${taskDescription}. Utilize the following libraries/frameworks if appropriate: ${libraries}. The code should adhere to these constraints: ${constraints}. Please include comments explaining key parts of the code.",
-    parameters: [
-      { name: 'language', label: 'Programming Language', type: 'text', placeholder: 'e.g., Python, TypeScript', defaultValue: 'Python' },
-      { name: 'taskDescription', label: 'Task Description', type: 'textarea', placeholder: 'e.g., read a CSV file, process data, and output a JSON', rows: 4 },
-      { name: 'libraries', label: 'Libraries/Frameworks (optional)', type: 'text', placeholder: 'e.g., pandas, React, Express.js', defaultValue: 'standard libraries' },
-      { name: 'constraints', label: 'Constraints (optional)', type: 'textarea', placeholder: 'e.g., must be compatible with Python 3.8+, no external API calls', rows: 3, defaultValue: 'standard best practices' },
-    ],
-    example: {
-      inputs: { language: 'Python', taskDescription: 'create a function that takes a list of numbers and returns the sum of even numbers', libraries: 'None', constraints: 'Handle empty list gracefully.' },
-      output: "Write a Python script to create a function that takes a list of numbers and returns the sum of even numbers. Utilize the following libraries/frameworks if appropriate: None. The code should adhere to these constraints: Handle empty list gracefully.. Please include comments explaining key parts of the code.",
-    },
-    icon: Edit3,
-    category: "Code Generation",
+    jsonId: 2,
+    name: "Explicit Context Setup",
+    templateContent: "Here's the problem: {summary}. The code is below. It should do {expected_behavior}, but instead it's doing {factual_behavior}. Why?",
+    descriptionContent: "Frame the problem clearly to avoid generic, surface-level responses",
+    icon: MessageSquare,
+    category: "Debugging"
   },
-   {
-    id: 'refactor-code',
-    name: 'Refactor Code',
-    description: 'Provides a prompt to ask an AI to refactor a piece of code for clarity, performance, or style.',
-    template: "Please refactor the following ${language} code snippet to improve ${refactorGoal}. \n\nOriginal Code:\n```${language}\n${code}\n```\n\nExplain the changes made and why they are beneficial.",
-    parameters: [
-      { name: 'language', label: 'Programming Language', type: 'text', placeholder: 'e.g., JavaScript, Java', defaultValue: 'JavaScript' },
-      { name: 'code', label: 'Code to Refactor', type: 'textarea', placeholder: 'Paste your code here', rows: 8 },
-      { name: 'refactorGoal', label: 'Refactoring Goal', type: 'select', options: ['readability', 'performance', 'maintainability', 'adherence to specific style guide (e.g., PEP8)'], defaultValue: 'readability' },
-    ],
-    example: {
-      inputs: { language: 'JavaScript', code: "function example(arr) { var new_arr = []; for(var i=0; i<arr.length; i++){ if(arr[i] > 10) new_arr.push(arr[i]*2); } return new_arr; }", refactorGoal: 'readability and modern JavaScript syntax' },
-      output: "Please refactor the following JavaScript code snippet to improve readability and modern JavaScript syntax. \n\nOriginal Code:\n```JavaScript\nfunction example(arr) { var new_arr = []; for(var i=0; i<arr.length; i++){ if(arr[i] > 10) new_arr.push(arr[i]*2); } return new_arr; }\n```\n\nExplain the changes made and why they are beneficial.",
-    },
+  {
+    jsonId: 3,
+    name: "Input/Output Examples",
+    templateContent: "This function should return {expected_output} when given {input}. Can you write or fix the code?",
+    descriptionContent: "Guide the assistant by showing intent through examples",
+    icon: TerminalSquare,
+    category: "Code Generation"
+  },
+  {
+    jsonId: 4,
+    name: "Iterative Chaining",
+    templateContent: "Let's break this down. First, {step1}. Next, {step2}. Then, {step3}.",
+    descriptionContent: "Break larger tasks into steps to avoid overwhelming or vague prompts",
+    icon: Workflow,
+    category: "Task Breakdown"
+  },
+  {
+    jsonId: 5,
+    name: "Debug with Simulation",
+    templateContent: "Please simulate the execution of the following code, walking through it line by line. For each significant step or loop iteration, state the current values of key variables. Identify potential points where it might break or behave unexpectedly.\n\n```\n{function_code}\n```",
+    descriptionContent: "Get the assistant to simulate runtime behavior and surface hidden bugs",
+    icon: Bug,
+    category: "Debugging"
+  },
+  {
+    jsonId: 6,
+    name: "Feature Blueprinting",
+    templateContent: "I'm building {feature}. Requirements:\n{bullets}\n\nUsing: {tech_stack}.\n\nPlease scaffold the initial component and explain your choices.",
+    descriptionContent: "Kick off feature development with AI-led planning and scaffolding",
+    icon: ClipboardList,
+    category: "Scaffolding"
+  },
+  {
+    jsonId: 7,
+    name: "Code Refactor Guidance",
+    templateContent: "Please refactor the following code to improve {goal}. Focus on aspects like {examples_for_goal}. Ensure you use comments to explain the key changes made and their benefits.\n\n```\n{code_to_refactor}\n```",
+    descriptionContent: "Make AI refactors align with your goals, not arbitrary changes",
     icon: Zap,
-    category: "Code Improvement",
+    category: "Code Improvement"
+  },
+  {
+    jsonId: 8,
+    name: "Ask for Alternatives",
+    templateContent: "Here's a piece of code:\n\n```\n{code_snippet}\n```\n\nPlease provide an alternative implementation based on the following approach: {alternative_approach}. Explain the differences and trade-offs.",
+    descriptionContent: "Explore multiple implementation paths and expand your toolbox",
+    icon: GitCompareArrows,
+    category: "Exploration"
+  },
+  {
+    jsonId: 9,
+    name: "Rubber Ducking",
+    templateContent: "I'm trying to understand a piece of code. Here's my current understanding of what it does:\n\n{your_explanation}\n\nOptionally, here's the code I'm referring to:\n```\n{function_code}\n```\n\nAm I missing any key aspects? Are there any potential misunderstandings or bugs that my explanation might reveal? Please challenge my assumptions.",
+    descriptionContent: "Let the AI challenge your understanding and spot inconsistencies",
+    icon: BrainCircuit,
+    category: "Understanding"
+  },
+  {
+    jsonId: 10,
+    name: "Constraint Anchoring",
+    templateContent: "Please process/generate/modify the following code (or address the task):\n\n```\n{code_snippet_or_task}\n```\n\nWhen doing so, adhere to these constraints:\n- Avoid: {things_to_avoid}\n- Stick to: {things_to_stick_to}\n- Optimize for: {optimization_goal}",
+    descriptionContent: "Prevent the AI from overreaching or introducing incompatible patterns",
+    icon: Target,
+    category: "Constraints"
   }
 ];
+
+export const PROMPT_STRATEGIES: PromptStrategy[] = newStrategiesData.map(item => {
+  const parameters = extractParameters(item.templateContent);
+  const example = generateExample(item.templateContent, parameters);
+  
+  // Convert {param} to ${param} for the final template string
+  const finalTemplate = item.templateContent.replace(/\{(\w+)\}/g, '${"$1"}');
+  // And update example output to use the same placeholder syntax if needed, or rather, ensure example output is fully resolved
+  let finalExampleOutput = item.templateContent;
+   parameters.forEach(param => {
+    const regex = new RegExp(`\\{${param.name}\\}`, 'g');
+    finalExampleOutput = finalExampleOutput.replace(regex, example.inputs[param.name]);
+  });
+
+
+  return {
+    id: item.name.toLowerCase().replace(/\s+/g, '-'),
+    name: item.name,
+    description: item.descriptionContent,
+    template: finalTemplate,
+    parameters,
+    example: {
+      inputs: example.inputs,
+      output: finalExampleOutput
+    },
+    icon: item.icon,
+    category: item.category,
+  };
+});

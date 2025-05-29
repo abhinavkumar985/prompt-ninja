@@ -11,8 +11,8 @@ export default {
   theme: {
   	extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)', ...defaultTheme.fontFamily.sans],
-        mono: ['var(--font-geist-mono)', ...defaultTheme.fontFamily.mono],
+        sans: ['var(--font-inter)', 'var(--font-noto-sans)', ...defaultTheme.fontFamily.sans],
+        // mono font can be configured here if needed later, for now, sans is primary
       },
   		colors: {
   			background: 'hsl(var(--background))',

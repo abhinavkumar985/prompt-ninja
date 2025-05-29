@@ -4,17 +4,21 @@ export function LogoIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
+      width="24" // Default width, can be overridden by props or className
+      height="24" // Default height, can be overridden by props or className
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
+      stroke="currentColor" // Will take color from parent by default
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      {...props}
+      {...props} // Spread props to allow overriding (e.g., className for size/color)
     >
-      <path d="M14 2l4 4L8 20H4v-4L14 2z" />
-      <path d="M12 12l8 8" />
-      <path d="M3 21l4 -4" />
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+      <path d="M5 3v4"></path>
+      <path d="M19 17v4"></path>
+      <path d="M3 5h4"></path>
+      <path d="M17 19h4"></path>
     </svg>
   );
 }

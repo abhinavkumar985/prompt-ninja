@@ -2,8 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2, FileText, Github } from "lucide-react";
 
 export const metadata = {
-  title: 'Contribution Guide - PromptCraft AI',
-  description: 'Learn how to contribute to the PromptCraft AI strategy library.',
+  title: 'Contribution Guide - PromptNin',
+  description: 'Learn how to contribute to the PromptNin strategy library.',
 };
 
 export default function ContributionGuidePage() {
@@ -12,7 +12,7 @@ export default function ContributionGuidePage() {
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Contribution Guide</h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Help us grow PromptCraft AI! Learn how to contribute new prompt strategies and improve existing ones.
+          Help us grow PromptNin! Learn how to contribute new prompt strategies and improve existing ones.
         </p>
       </section>
 
@@ -22,7 +22,7 @@ export default function ContributionGuidePage() {
         </CardHeader>
         <CardContent className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none dark:prose-invert text-foreground">
           <p>
-            We welcome contributions to our prompt strategy library. By sharing your expertise, you help make PromptCraft AI a more powerful tool for everyone. This guide outlines the process for proposing and submitting new strategies.
+            We welcome contributions to our prompt strategy library. By sharing your expertise, you help make PromptNin a more powerful tool for everyone. This guide outlines the process for proposing and submitting new strategies.
           </p>
           
           <h2 className="text-2xl font-semibold mt-6 mb-3">What Makes a Good Strategy?</h2>
@@ -41,7 +41,7 @@ export default function ContributionGuidePage() {
           <ol className="list-decimal pl-5 space-y-2">
             <li>
               <strong>Fork the Repository:</strong> (Link to be provided when available)
-              Start by forking the official PromptCraft AI GitHub repository.
+              Start by forking the official PromptNin GitHub repository.
             </li>
             <li>
               <strong>Define Your Strategy:</strong>
@@ -64,12 +64,12 @@ export default function ContributionGuidePage() {
             </li>
             <li>
               <strong>Submit a Pull Request:</strong>
-              Once you're happy with your strategy, commit your changes and open a Pull Request against the main branch of the PromptCraft AI repository.
+              Once you're happy with your strategy, commit your changes and open a Pull Request against the main branch of the PromptNin repository.
               In your PR description, please explain your strategy, its use cases, and why you think it's a valuable addition.
             </li>
             <li>
               <strong>Review Process:</strong>
-              The PromptCraft AI maintainers will review your submission. We may provide feedback or request changes.
+              The PromptNin maintainers will review your submission. We may provide feedback or request changes.
             </li>
           </ol>
 
@@ -86,7 +86,7 @@ export default function ContributionGuidePage() {
           </div>
 
           <p className="mt-6">
-            Thank you for considering contributing to PromptCraft AI!
+            Thank you for considering contributing to PromptNin!
           </p>
         </CardContent>
       </Card>

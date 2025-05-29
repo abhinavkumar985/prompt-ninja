@@ -13,6 +13,14 @@ import { CopyButton } from '@/components/CopyButton';
 import { Wand2, Info, FileText } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// metadata can't be dynamically set in client components easily,
+// but we can update the main H1 and descriptive paragraph
+// export const metadata = {
+//   title: 'Playground - PromptNin',
+//   description: 'Interactively generate AI prompts with PromptNin. Select strategies, input your code or parameters, and craft the perfect input for your AI assistant.',
+// };
+
+
 export default function PlaygroundPage() {
   const searchParams = useSearchParams();
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
@@ -84,13 +92,18 @@ export default function PlaygroundPage() {
         return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm"/>;
     }
   };
+  
+  useEffect(() => {
+    // Update document title for client components if needed
+    document.title = 'Playground - PromptNin';
+  }, []);
 
   return (
     <div className="space-y-8">
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Prompt Playground</h1>
         <p className="mt-3 max-w-xl mx-auto text-lg text-muted-foreground">
-          Interactively generate AI prompts using predefined strategies. Experiment and craft the perfect input for your AI assistant.
+          Interactively generate AI prompts with PromptNin. Select strategies, input your code or parameters, and craft the perfect input for your AI assistant.
         </p>
       </section>
 

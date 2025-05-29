@@ -18,7 +18,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
           <LogoIcon className="h-7 w-7" />
-          <span>PromptCraft AI</span>
+          <span>PromptNin</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-2 lg:space-x-4">
@@ -43,7 +43,7 @@ export function Header() {
               <nav className="grid gap-4 py-6">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary mb-4">
                   <LogoIcon className="h-7 w-7" />
-                  <span>PromptCraft AI</span>
+                  <span>PromptNin</span>
                 </Link>
                 {navItems.map((item) => (
                   <Link

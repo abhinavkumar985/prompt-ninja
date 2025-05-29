@@ -6,8 +6,8 @@ import { Search } from 'lucide-react';
 // For simplicity, we'll keep it server-side and add client-side filtering later if needed.
 
 export const metadata = {
-  title: 'Strategy Library - PromptCraft AI',
-  description: 'Explore a comprehensive library of AI prompt strategies.',
+  title: 'Strategy Library - PromptNin',
+  description: 'Explore PromptNin\'s comprehensive library of AI prompt strategies.',
 };
 
 export default function StrategyLibraryPage() {
@@ -16,7 +16,7 @@ export default function StrategyLibraryPage() {
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Prompt Strategy Library</h1>
         <p className="mt-3 max-w-xl mx-auto text-lg text-muted-foreground">
-          Discover and utilize a wide range of predefined strategies to generate effective AI prompts.
+          Discover and utilize a wide range of predefined strategies from PromptNin to generate effective AI prompts.
         </p>
       </section>
       

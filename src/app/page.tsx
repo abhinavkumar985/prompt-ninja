@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PROMPT_STRATEGIES } from "@/lib/prompt-strategies";
-import { ArrowRight, CheckCircle2, Lightbulb, Users, Wand2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Lightbulb, Users, Wand2, ClipboardType } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -13,9 +13,9 @@ export default function HomePage() {
       description: "Choose from a growing library of prompt strategies tailored for various coding tasks.",
     },
     {
-      icon: <Lightbulb className="h-8 w-8 text-primary" />,
-      title: "Interactive Playground",
-      description: "Experiment with strategies and inputs in real-time to craft the perfect prompt.",
+      icon: <ClipboardType className="h-8 w-8 text-primary" />, // Changed icon
+      title: "Paste Your Code",
+      description: "Easily integrate your existing code snippets into prompts for targeted assistance.",
     },
     {
       icon: <Users className="h-8 w-8 text-primary" />,
@@ -28,10 +28,10 @@ export default function HomePage() {
     <div className="flex flex-col items-center space-y-12">
       <section className="text-center pt-10 md:pt-16">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-          Craft Perfect AI Prompts with <span className="text-primary">PromptCraft AI</span>
+          Generate High-Quality AI Prompts with <span className="text-primary">PromptNin</span>
         </h1>
         <p className="mt-4 md:mt-6 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
-          Elevate your AI-assisted coding with powerful, customizable prompt generation. Say goodbye to generic outputs and hello to precision-engineered AI interactions.
+          PromptNin is a developer tool that helps engineers craft superior prompts for AI code assistants like Copilot, Gemini, and others. Utilize structured techniques, paste your code, and tailor configurations to engineer the perfect AI interaction for your coding tasks.
         </p>
         <div className="mt-8 md:mt-10 flex flex-col sm:flex-row justify-center items-center gap-4">
           <Button size="lg" asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-transform hover:scale-105">
@@ -50,16 +50,16 @@ export default function HomePage() {
       <section className="w-full max-w-5xl">
         <Image 
           src="https://placehold.co/1200x600.png" 
-          alt="PromptCraft AI Interface Showcase" 
+          alt="PromptNin Interface Showcase" 
           width={1200} 
           height={600} 
           className="rounded-lg shadow-2xl object-cover"
-          data-ai-hint="abstract code"
+          data-ai-hint="abstract code interface"
         />
       </section>
 
       <section className="w-full max-w-5xl text-center py-10">
-        <h2 className="text-3xl font-semibold tracking-tight text-foreground">Why Choose PromptCraft AI?</h2>
+        <h2 className="text-3xl font-semibold tracking-tight text-foreground">Why Choose PromptNin?</h2>
         <p className="mt-3 max-w-xl mx-auto text-md text-muted-foreground">
           Unlock the full potential of AI code assistants with intelligently designed prompts.
         </p>
@@ -108,7 +108,7 @@ export default function HomePage() {
          <Card className="p-6 md:p-10 shadow-xl bg-gradient-to-br from-primary to-blue-600 text-primary-foreground">
           <h2 className="text-3xl font-semibold">Ready to Supercharge Your AI Coding?</h2>
           <p className="mt-4 text-lg opacity-90">
-            Join PromptCraft AI today and experience a new level of efficiency and precision in your development workflow.
+            Join PromptNin today and experience a new level of efficiency and precision in your development workflow.
           </p>
           <Button size="lg" variant="secondary" asChild className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90 shadow-md transition-transform hover:scale-105">
             <Link href="/playground">

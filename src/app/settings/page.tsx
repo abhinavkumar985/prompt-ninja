@@ -18,12 +18,17 @@ interface AppSettings {
 
 const defaultSettings: AppSettings = {
   username: 'User',
-  preferredAIModel: 'gpt-4',
+  preferredAIModel: 'gemini-pro', // Updated default
   enableNotifications: true,
 };
 
+// export const metadata = { // Cannot set metadata directly in client component
+//   title: 'Settings - PromptNin',
+//   description: 'Customize your PromptNin experience. Settings are saved locally.',
+// };
+
 export default function SettingsPage() {
-  const [settings, setSettings] = useLocalStorage<AppSettings>('promptcraft-settings', defaultSettings);
+  const [settings, setSettings] = useLocalStorage<AppSettings>('promptnin-settings', defaultSettings); // Updated key
   const { toast } = useToast();
 
   // Local form state to avoid updating localStorage on every keystroke
@@ -37,6 +42,11 @@ export default function SettingsPage() {
     setLocalPreferredAIModel(settings.preferredAIModel);
     setLocalEnableNotifications(settings.enableNotifications);
   }, [settings]);
+
+  useEffect(() => {
+    // Update document title for client components if needed
+    document.title = 'Settings - PromptNin';
+  }, []);
 
 
   const handleSaveSettings = () => {
@@ -71,7 +81,7 @@ export default function SettingsPage() {
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Configuration Settings</h1>
         <p className="mt-3 text-lg text-muted-foreground">
-          Customize your PromptCraft AI experience. Settings are saved locally in your browser.
+          Customize your PromptNin experience. Settings are saved locally in your browser.
         </p>
       </section>
 
@@ -98,9 +108,9 @@ export default function SettingsPage() {
               id="preferredAIModel" 
               value={localPreferredAIModel} 
               onChange={(e) => setLocalPreferredAIModel(e.target.value)} 
-              placeholder="e.g., gpt-4, claude-3" 
+              placeholder="e.g., gemini-pro, gpt-4" 
             />
-            <p className="text-xs text-muted-foreground">Specify if you have a preferred AI model (for reference, not functional yet).</p>
+            <p className="text-xs text-muted-foreground">Specify your preferred AI model (for reference, not yet functional for generation).</p>
           </div>
           
           <div className="flex items-center justify-between space-x-2 rounded-lg border p-4 shadow-sm">

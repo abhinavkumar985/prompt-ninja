@@ -10,8 +10,8 @@ import { Toaster } from "@/components/ui/toaster";
 // Their .variable properties provide the CSS variable names.
 
 export const metadata: Metadata = {
-  title: 'PromptCraft AI',
-  description: 'Generate and manage AI code prompts with various strategies.',
+  title: 'PromptNin - AI Prompt Generation Tool',
+  description: 'PromptNin helps developers generate high-quality prompts for AI code assistants using structured techniques. Paste your code and configure strategies to get the perfect prompt.',
 };
 
 export default function RootLayout({

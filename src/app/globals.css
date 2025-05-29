@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 220 17% 95%; /* Light Gray #F0F2F5 (default, can be overridden by specific bg-slate-50) */
+    --background: 220 17% 95%; /* Light Gray #F0F2F5 */
     --foreground: 220 10% 25%; /* Dark Gray for text */
 
     --card: 0 0% 100%; /* White */
@@ -13,46 +13,45 @@
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 220 10% 25%;
 
-    --primary: 209 90% 50%; /* Vibrant Blue #0c7ff2 */
+    --primary: 196 77% 53%; /* #29ABE2 - Vibrant Blue from PRD */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 220 15% 90%; 
+    --secondary: 220 15% 90%;
     --secondary-foreground: 220 10% 20%;
 
     --muted: 220 15% 90%;
     --muted-foreground: 220 10% 45%; /* Lighter gray for muted text */
 
-    --accent: 39 94% 56%; /* Yellow-orange #F9A825 */
-    --accent-foreground: 39 94% 10%; /* Dark brown/black for text on accent */
+    --accent: 200 100% 95%; /* #E6F7FF - Very light blue for selected/accented items */
+    --accent-foreground: 196 77% 53%; /* Primary blue for text on light accent */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 10% 88%; /* Default border, slate-200 is approx 215 30% 88% */
+    --border: 220 10% 88%; 
     --input: 220 10% 92%;
-    --ring: 209 90% 50%; /* Primary blue for rings */
+    --ring: 196 77% 53%; /* Primary blue for rings */
 
-    --radius: 0.5rem; /* Corresponds to rounded-xl in some html (0.75rem) */
+    --radius: 0.5rem;
 
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --chart-1: 196 77% 53%; /* Adjusted to new primary */
+    --chart-2: 200 80% 60%; /* Adjusted to a lighter blue */
+    --chart-3: 210 70% 40%; /* Adjusted to a darker blue */
+    --chart-4: 190 70% 50%;
+    --chart-5: 205 75% 55%;
 
     /* Sidebar variables */
     --sidebar-background: 220 10% 15%; 
     --sidebar-foreground: 220 15% 80%;
-    --sidebar-primary: 209 90% 50%;
+    --sidebar-primary: 196 77% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 39 94% 56%;
-    --sidebar-accent-foreground: 39 94% 10%;
+    --sidebar-accent: 200 100% 95%;
+    --sidebar-accent-foreground: 196 77% 53%;
     --sidebar-border: 220 10% 25%;
-    --sidebar-ring: 209 90% 50%;
+    --sidebar-ring: 196 77% 53%;
   }
 
   .dark {
-    /* Basic dark theme, can be expanded if needed */
     --background: 220 10% 12%;
     --foreground: 220 15% 90%;
 
@@ -62,7 +61,7 @@
     --popover: 220 10% 15%;
     --popover-foreground: 220 15% 90%;
 
-    --primary: 209 90% 50%;
+    --primary: 196 77% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 10% 20%;
@@ -71,41 +70,40 @@
     --muted: 220 10% 20%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 39 94% 56%;
-    --accent-foreground: 39 94% 10%;
+    --accent: 200 80% 25%; /* Darker light blue for dark mode accent bg */
+    --accent-foreground: 196 85% 75%; /* Lighter primary blue for text on dark accent */
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 10% 25%;
     --input: 220 10% 20%;
-    --ring: 209 90% 50%;
+    --ring: 196 77% 53%;
 
     /* Dark sidebar variables */
     --sidebar-background: 220 10% 10%;
     --sidebar-foreground: 220 15% 85%;
-    --sidebar-primary: 209 90% 50%;
+    --sidebar-primary: 196 77% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 39 94% 56%;
-    --sidebar-accent-foreground: 39 94% 10%;
+    --sidebar-accent: 200 80% 25%;
+    --sidebar-accent-foreground: 196 85% 75%;
     --sidebar-border: 220 10% 20%;
-    --sidebar-ring: 209 90% 50%;
+    --sidebar-ring: 196 77% 53%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border; /* Default border color for elements */
+    @apply border-border; 
   }
   body {
     @apply bg-background text-foreground;
-    /* font-family is now applied via Tailwind config (font-sans) */
   }
 }
 
 @layer components {
   .gradient-text {
-    background: linear-gradient(to right, #0c7ff2, #3b82f6);
+    background: linear-gradient(to right, #0c7ff2, #3b82f6); /* Keeping this specific gradient for landing page title as per user's HTML */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

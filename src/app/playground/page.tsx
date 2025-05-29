@@ -6,14 +6,12 @@ import { useSearchParams } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CopyButton } from '@/components/CopyButton';
-import { Wand2, Info, FileText } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react'; // Keep for Alert icon
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -29,6 +27,7 @@ export default function PlaygroundPage() {
   );
 
   useEffect(() => {
+    document.title = 'Prompt Generator - PromptNin';
     const strategyIdFromQuery = searchParams.get('strategy');
     if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
       setSelectedStrategyId(strategyIdFromQuery);
@@ -55,8 +54,13 @@ export default function PlaygroundPage() {
           newDefaultValues[param.name] = '';
         }
       });
+      // Ensure main_input is initialized, possibly overriding defaults if it's not configurable
+      if (!newDefaultValues['main_input']) {
+         newDefaultValues['main_input'] = selectedStrategy.parameters.find(p => p.name === 'main_input')?.defaultValue || '';
+      }
+
       setInputValues(newDefaultValues);
-      setGeneratedPrompt(''); 
+      setGeneratedPrompt(''); // Clear prompt when strategy or its defaults change
     } else {
       setInputValues({});
       setGeneratedPrompt('');
@@ -65,6 +69,10 @@ export default function PlaygroundPage() {
 
   const handleInputChange = (paramName: string, value: string) => {
     setInputValues(prev => ({ ...prev, [paramName]: value }));
+  };
+
+  const handleStrategyChange = (strategyId: string) => {
+    setSelectedStrategyId(strategyId);
   };
 
   const handleGeneratePrompt = () => {
@@ -79,128 +87,129 @@ export default function PlaygroundPage() {
 
   const renderParameterInput = (param: PromptParameter) => {
     const value = inputValues[param.name] || '';
-    switch (param.type) {
-      case 'textarea':
-        return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm bg-input text-foreground"/>;
-      case 'select':
-        return (
-          <Select value={value} onValueChange={val => handleInputChange(param.name, val)}>
-            <SelectTrigger id={param.name} className="bg-input text-foreground">
-              <SelectValue placeholder={param.placeholder || `Select ${param.label}`} />
-            </SelectTrigger>
-            <SelectContent className="bg-popover text-popover-foreground">
-              {param.options?.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-      case 'text':
-      default:
-        return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm bg-input text-foreground"/>;
-    }
+    // main_input is handled separately by the large Textarea
+    if (param.name === 'main_input') return null;
+
+    return (
+      <div key={param.name} className="space-y-1.5 mb-4">
+        <Label htmlFor={param.name} className="text-sm font-medium text-foreground">{param.label}</Label>
+        {param.type === 'textarea' ? (
+          <Textarea
+            id={param.name}
+            value={value}
+            onChange={e => handleInputChange(param.name, e.target.value)}
+            placeholder={param.placeholder}
+            rows={param.rows || 3}
+            className="font-mono text-sm bg-input text-foreground border-border focus:ring-primary focus:border-primary"
+          />
+        ) : (
+          <Input
+            id={param.name}
+            type="text"
+            value={value}
+            onChange={e => handleInputChange(param.name, e.target.value)}
+            placeholder={param.placeholder}
+            className="text-sm bg-input text-foreground border-border focus:ring-primary focus:border-primary"
+          />
+        )}
+      </div>
+    );
   };
   
-  useEffect(() => {
-    document.title = 'Playground - PromptNin';
-  }, []);
+  const additionalParameters = selectedStrategy?.parameters.filter(p => p.name !== 'main_input');
 
   return (
-    <div className="space-y-8 text-foreground">
-      <section className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Prompt Playground</h1>
-        <p className="mt-3 max-w-xl mx-auto text-lg text-muted-foreground">
-          Interactively generate AI prompts with PromptNin. Select strategies, input your code or parameters, and craft the perfect input for your AI assistant.
-        </p>
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="lg:col-span-1 shadow-xl bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-card-foreground"><Wand2 className="h-6 w-6 text-primary" /> Configure Strategy</CardTitle>
-            <CardDescription className="text-muted-foreground">Select a strategy and fill in the parameters to generate your prompt. Default values from Settings will be pre-filled for configurable parameters.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label htmlFor="strategy-select" className="text-sm font-medium text-card-foreground">Prompt Strategy</Label>
-              <Select value={selectedStrategyId || ''} onValueChange={id => setSelectedStrategyId(id)}>
-                <SelectTrigger id="strategy-select" className="bg-input text-foreground">
-                  <SelectValue placeholder="Select a strategy" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover text-popover-foreground border-border">
-                  {PROMPT_STRATEGIES.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedStrategy && selectedStrategy.parameters.map(param => (
-              <div key={param.name} className="space-y-1.5">
-                <Label htmlFor={param.name} className="text-sm font-medium text-card-foreground">{param.label}</Label>
-                {renderParameterInput(param)}
-              </div>
-            ))}
-            
-            <Button onClick={handleGeneratePrompt} disabled={!selectedStrategy} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Wand2 className="mr-2 h-4 w-4" /> Generate Prompt
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-2 space-y-8">
-          {selectedStrategy && (
-            <Alert variant="default" className="shadow-lg bg-card border-border text-card-foreground">
-              <Info className="h-5 w-5 text-primary" />
-              <AlertTitle className="font-semibold text-card-foreground">{selectedStrategy.name}</AlertTitle>
-              <AlertDescription className="text-muted-foreground">
-                {selectedStrategy.description}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Card className="shadow-xl bg-card border-border">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-card-foreground"><FileText className="h-6 w-6 text-primary" /> Generated Prompt</CardTitle>
-                <CopyButton textToCopy={generatedPrompt} variant="outline" className="border-primary text-primary hover:bg-primary/10" />
-              </div>
-              <CardDescription className="text-muted-foreground">This is the AI prompt generated based on your selections. Copy and use it with your preferred AI tool.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                readOnly
-                value={generatedPrompt}
-                placeholder="Your generated prompt will appear here..."
-                className="min-h-[200px] lg:min-h-[300px] font-mono text-sm bg-input/50 border-dashed border-border text-foreground"
-                aria-label="Generated Prompt"
-              />
-            </CardContent>
-          </Card>
+    <main className="px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-8 lg:py-12">
+      <div className="layout-content-container flex flex-col gap-6 lg:gap-8 max-w-[960px] flex-1">
+        <div className="flex flex-col gap-2 p-4">
+          <h1 className="text-foreground tracking-tight text-3xl lg:text-4xl font-bold leading-tight">Prompt Generator</h1>
+          <p className="text-muted-foreground text-base lg:text-lg">Select from various prompting strategies, input your code or error, and instantly receive a tailored prompt.</p>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          <section className="flex flex-col gap-4 p-4">
+            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">1. Select a technique</h3>
+            <div className="flex flex-wrap gap-3">
+              {PROMPT_STRATEGIES.map(strategy => (
+                <label
+                  key={strategy.id}
+                  className={`text-sm font-medium leading-normal flex items-center justify-center rounded-lg border px-4 py-2.5 text-foreground relative cursor-pointer transition-all hover:border-primary/50
+                    ${selectedStrategyId === strategy.id ? 'border-2 border-primary bg-primary/10' : 'border-border'}`}
+                >
+                  {strategy.name}
+                  <input
+                    type="radio"
+                    name="prompting_technique"
+                    value={strategy.id}
+                    checked={selectedStrategyId === strategy.id}
+                    onChange={() => handleStrategyChange(strategy.id)}
+                    className="sr-only"
+                  />
+                </label>
+              ))}
+            </div>
+
+            {selectedStrategy && (
+              <Alert variant="default" className="shadow-lg bg-card border-border text-card-foreground mt-4">
+                <Info className="h-5 w-5 text-primary" />
+                <AlertTitle className="font-semibold text-card-foreground">{selectedStrategy.name}</AlertTitle>
+                <AlertDescription className="text-muted-foreground">
+                  {selectedStrategy.description}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {additionalParameters && additionalParameters.length > 0 && (
+              <div className="pt-4">
+                 <h3 className="text-foreground text-lg font-medium leading-tight tracking-[-0.015em] mb-2">Configure Strategy Parameters:</h3>
+                {additionalParameters.map(param => renderParameterInput(param))}
+              </div>
+            )}
+
+            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em] pt-4">2. Input your code or error</h3>
+            <Textarea
+              value={inputValues['main_input'] || ''}
+              onChange={e => handleInputChange('main_input', e.target.value)}
+              className="w-full bg-input border-border rounded-lg p-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              placeholder="Paste your code snippet, error message, or question here..."
+              rows={selectedStrategy?.parameters.find(p=>p.name === 'main_input')?.rows || 8}
+            />
+          </section>
+
+          <section className="flex flex-col gap-4 p-4 bg-card rounded-lg">
+            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
+            <div className="bg-background border-border rounded-lg p-4 min-h-[200px] text-muted-foreground text-sm whitespace-pre-wrap overflow-auto">
+              {generatedPrompt || "Your generated prompt will appear here..."}
+            </div>
+            <div className="flex gap-3 mt-auto">
+              <CopyButton
+                textToCopy={generatedPrompt}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <span className="material-icons text-base mr-2">content_copy</span>
+                Copy Prompt
+              </CopyButton>
+              <Button
+                onClick={handleGeneratePrompt}
+                disabled={!selectedStrategy}
+                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                <span className="material-icons text-base mr-2">refresh</span>
+                Regenerate
+              </Button>
+            </div>
+          </section>
+        </div>
+
+        <Button
+          onClick={handleGeneratePrompt}
+          disabled={!selectedStrategy}
+          className="w-full md:w-auto self-center flex min-w-[120px] max-w-[480px] cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded-lg h-12 px-6 bg-primary text-primary-foreground text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+        >
+          <span className="material-icons">auto_awesome</span>
+          <span className="truncate">Generate Prompt</span>
+        </Button>
       </div>
-       {selectedStrategy?.example && (
-        <Card className="mt-8 shadow-xl bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-card-foreground"><Info className="h-5 w-5 text-primary"/> Example Usage</CardTitle>
-            <CardDescription className="text-muted-foreground">An example of how this strategy can be used.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Inputs:</h4>
-              <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
-                {JSON.stringify(selectedStrategy.example.inputs, null, 2)}
-              </pre>
-            </div>
-            <div>
-              <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Output Prompt:</h4>
-              <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
-                {selectedStrategy.example.output}
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </main>
   );
 }

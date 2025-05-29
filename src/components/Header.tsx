@@ -1,11 +1,12 @@
+
 import Link from 'next/link';
 import { LogoIcon } from '@/components/icons/LogoIcon';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Settings, BookOpen, Wand2, HomeIcon } from 'lucide-react';
+import { Menu, Settings, BookOpen, Wand2 } from 'lucide-react'; // Removed HomeIcon
 
 const navItems = [
-  { href: '/', label: 'Home', icon: HomeIcon },
+  // { href: '/', label: 'Home', icon: HomeIcon }, // Removed Home link
   { href: '/playground', label: 'Playground', icon: Wand2 },
   { href: '/strategy-library', label: 'Strategies', icon: BookOpen },
   { href: '/contribution-guide', label: 'Contribute', icon: BookOpen },

@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
-import useLocalStorage from '@/hooks/useLocalStorage'; // Import useLocalStorage
+import useLocalStorage from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,6 @@ import { CopyButton } from '@/components/CopyButton';
 import { Wand2, Info, FileText } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Type for stored strategy configurations
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
 export default function PlaygroundPage() {
@@ -24,7 +23,6 @@ export default function PlaygroundPage() {
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
 
-  // Load all strategy configurations from local storage
   const [allStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
     'promptnin-strategy-configurations',
     {}
@@ -45,16 +43,15 @@ export default function PlaygroundPage() {
 
   useEffect(() => {
     if (selectedStrategy) {
-      // Get saved configuration for the current strategy, or an empty object if none
       const savedConfigForStrategy = allStrategyConfigs[selectedStrategy.id] || {};
       const newDefaultValues: Record<string, string> = {};
 
       selectedStrategy.parameters.forEach(param => {
         // Priority:
-        // 1. Value from saved configuration (local storage)
+        // 1. Value from saved configuration (local storage) IF param is configurable
         // 2. Default value from strategy definition (prompt-strategies.ts)
         // 3. Empty string
-        if (savedConfigForStrategy[param.name] !== undefined) {
+        if (param.isConfigurable && savedConfigForStrategy[param.name] !== undefined) {
           newDefaultValues[param.name] = savedConfigForStrategy[param.name];
         } else if (param.defaultValue) {
           newDefaultValues[param.name] = param.defaultValue;
@@ -63,9 +60,9 @@ export default function PlaygroundPage() {
         }
       });
       setInputValues(newDefaultValues);
-      setGeneratedPrompt(''); // Reset prompt when strategy or its saved config changes
+      setGeneratedPrompt(''); 
     }
-  }, [selectedStrategy, allStrategyConfigs]); // Re-run if selectedStrategy or any saved configs change
+  }, [selectedStrategy, allStrategyConfigs]);
 
   const handleInputChange = (paramName: string, value: string) => {
     setInputValues(prev => ({ ...prev, [paramName]: value }));
@@ -122,7 +119,7 @@ export default function PlaygroundPage() {
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Wand2 className="h-6 w-6 text-primary" /> Configure Strategy</CardTitle>
-            <CardDescription>Select a strategy and fill in the parameters to generate your prompt. Saved configurations from Settings will be pre-filled.</CardDescription>
+            <CardDescription>Select a strategy and fill in the parameters to generate your prompt. Default values from Settings will be pre-filled for configurable parameters.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
@@ -208,4 +205,3 @@ export default function PlaygroundPage() {
     </div>
   );
 }
-

@@ -3,17 +3,23 @@ import type { LucideIcon } from 'lucide-react';
 import {
   User,
   FileText,
-  ListChecks,
-  ListOrdered,
+  ListChecks, // Few-shot
+  ListOrdered, // Step-by-step
   Bug,
-  LayoutGrid,
+  LayoutGrid, // Placeholder, consider replacing if a better fit is found
   GitCompareArrows,
   BrainCircuit,
   MessageCircleQuestion,
-  Anchor,
-  Workflow, 
-  Wrench, 
-  Filter 
+  Anchor, // Constraint Anchoring placeholder
+  Wrench, // Feature Blueprinting
+  Workflow, // Iterative Chaining (could also be ListOrdered)
+  Filter, // Constraint Anchoring
+  BookCopy, // Explicit Context Setup
+  Lightbulb, // Generate Knowledge
+  DatabaseZap, // Retrieval-Augmented Generation
+  Repeat, // Iterative Refinement
+  Users, // Ensemble Methods
+  HelpingHand // Rubber Ducking (alternative to MessageCircleQuestion)
 } from 'lucide-react';
 
 export interface PromptParameter {
@@ -24,45 +30,45 @@ export interface PromptParameter {
   defaultValue?: string;
   placeholder?: string;
   rows?: number; // for textarea
+  isConfigurable?: boolean; // True if this param should appear on Settings page
 }
 
 export interface PromptStrategy {
   id: string;
   name: string;
-  description: string; // Full purpose/description
+  description: string; // Full purpose/description (from "purpose" in user JSON)
   shortDescription: string; // Short description for cards
-  template: string;
+  template: string; // (from "description" in user JSON, with {vars} -> ${vars})
   parameters: PromptParameter[];
   example: {
     inputs: Record<string, string>;
     output: string;
   };
-  icon?: LucideIcon; 
+  icon?: LucideIcon;
   category?: string;
-  imagePlaceholderKeywords: string; 
+  imagePlaceholderKeywords: string;
 }
 
 // Helper function to extract parameters from a template string
-const extractParameters = (template: string): PromptParameter[] => {
+const extractParameters = (template: string): Omit<PromptParameter, 'isConfigurable'>[] => {
   const regex = /\$\{(\w+)\}/g;
   let match;
-  const params: PromptParameter[] = [];
+  const params: Omit<PromptParameter, 'isConfigurable'>[] = [];
   const seenParams = new Set<string>();
 
   while ((match = regex.exec(template)) !== null) {
     const paramName = match[1];
     if (!seenParams.has(paramName)) {
       const label = paramName.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-      // A more robust check for textarea type based on common keywords in param names
-      const textareaKeywords = ['code', 'summary', 'description', 'bullets', 'explanation', 'input', 'instruction', 'requirements', 'template', 'json', 'text', 'context', 'error', 'output', 'goal', 'example', 'content', 'snippet', 'refactor', 'style', 'strategy', 'notes', 'function', 'behavior', 'feature'];
-      const isTextarea = textareaKeywords.some(keyword => paramName.toLowerCase().includes(keyword));
-      
+      const textareaKeywords = ['code', 'summary', 'description', 'bullets', 'explanation', 'input', 'instruction', 'requirements', 'template', 'json', 'text', 'context', 'error', 'output', 'goal', 'example', 'content', 'snippet', 'refactor', 'style', 'strategy', 'notes', 'function', 'behavior', 'feature', 'history', 'query', 'criteria', 'response', 'task', 'log', 'issue', 'script', 'detail', 'problem', 'solution', 'payload', 'data', 'config', 'report', 'message', 'comment', 'feedback', 'request', 'test', 'scenario', 'guideline', 'prompt'];
+      const isTextarea = textareaKeywords.some(keyword => paramName.toLowerCase().includes(keyword)) || paramName.toLowerCase().endsWith('s') || paramName.toLowerCase().includes('list');
+
       params.push({
         name: paramName,
         label: label,
         type: isTextarea ? 'textarea' : 'text',
         placeholder: `Enter ${label.toLowerCase()}`,
-        rows: isTextarea ? 5 : undefined, // Default 5 rows for textareas
+        rows: isTextarea ? 5 : undefined,
       });
       seenParams.add(paramName);
     }
@@ -87,123 +93,150 @@ const generateExample = (template: string, parameters: PromptParameter[]): { inp
   return { inputs, output };
 };
 
+interface StrategyInputItem {
+  jsonId: number;
+  name: string;
+  templateFromUser: string; // "description" from user JSON
+  purpose: string; // "purpose" from user JSON
+  shortDescription: string; // Added for cards
+  icon: LucideIcon;
+  category: string;
+  imagePlaceholderKeywords: string;
+  configurableParameterNames?: string[]; // New: lists params configurable on Settings page
+}
 
-const strategiesInput = [
+const strategiesInput: StrategyInputItem[] = [
   {
     jsonId: 1,
     name: "Role Prompting",
     templateFromUser: "You are a senior {language} developer. Review this function for {goal}: {function_code}",
     purpose: "Simulate expert-level code review, debugging, or refactoring.",
-    shortDescription: "Simulate a specific role (e.g., senior developer) to guide the AI's response style and focus.",
+    shortDescription: "Simulate a specific role to guide AI.",
     icon: User,
     category: "Persona",
-    imagePlaceholderKeywords: "expert persona"
+    imagePlaceholderKeywords: "expert persona",
+    configurableParameterNames: ["language", "goal"]
   },
   {
     jsonId: 2,
     name: "Explicit Context Setup",
-    templateFromUser: "Here's the problem context: {problem_summary}. The relevant code is: {code_snippet}. It should achieve {expected_behavior}, but instead it's exhibiting {factual_behavior}. Can you identify why and suggest a fix?",
-    purpose: "Frame the problem clearly with all necessary context to avoid generic, surface-level responses and get targeted solutions.",
-    shortDescription: "Clearly define problem context, relevant code, and desired vs. actual behavior for targeted fixes.",
-    icon: FileText,
+    templateFromUser: "Here's the problem: {summary}. The code is below: {code_snippet}. It should do {expected_behavior}, but instead it's doing {factual_behavior}. Why?",
+    purpose: "Frame the problem clearly to avoid generic, surface-level responses.",
+    shortDescription: "Clearly define problem context for targeted fixes.",
+    icon: BookCopy,
     category: "Problem Framing",
-    imagePlaceholderKeywords: "clear problem"
+    imagePlaceholderKeywords: "clear context",
+    configurableParameterNames: ["expected_behavior", "factual_behavior"]
   },
   {
     jsonId: 3,
     name: "Input/Output Examples (Few-shot)",
     templateFromUser: "Task: {task_description}\nExample 1:\nInput: {example_input_1}\nOutput: {example_output_1}\n\nExample 2:\nInput: {example_input_2}\nOutput: {example_output_2}\n\nNow, for the following input, provide the output:\nInput: {actual_input}\nOutput:",
-    purpose: "Guide the assistant by showing intent through a few examples (few-shot learning), especially for pattern recognition or specific formatting.",
-    shortDescription: "Provide a few input-output examples to guide the AI for tasks requiring specific formatting or pattern recognition.",
+    purpose: "Guide the assistant by showing intent through a few examples (few-shot learning).",
+    shortDescription: "Provide input-output examples to guide AI.",
     icon: ListChecks,
     category: "Guidance",
-    imagePlaceholderKeywords: "example driven"
+    imagePlaceholderKeywords: "example driven",
+    configurableParameterNames: []
   },
   {
     jsonId: 4,
-    name: "Iterative Chaining / Step-by-Step",
-    templateFromUser: "Let's build this step by step. \nFirst, {initial_task}. Provide the code for this step.\n(After reviewing) Next, based on the previous step, {second_task}. \n(After reviewing) Then, {third_task}, incorporating the previous results.",
-    purpose: "Break larger, complex tasks into a sequence of smaller, manageable steps to avoid overwhelming the AI and to allow for refinement at each stage.",
-    shortDescription: "Break down complex tasks into a sequence of manageable steps, allowing for review and refinement at each stage.",
+    name: "Iterative Chaining",
+    templateFromUser: "First, {initial_task}. (AI provides output for step 1) \nNext, based on the previous output, {second_task}. (AI provides output for step 2)\nThen, {third_task}.",
+    purpose: "Break larger tasks into steps to avoid overwhelming or vague prompts.",
+    shortDescription: "Break tasks into smaller, manageable steps.",
     icon: Workflow,
     category: "Decomposition",
-    imagePlaceholderKeywords: "stepwise process"
+    imagePlaceholderKeywords: "stepwise process",
+    configurableParameterNames: []
   },
   {
     jsonId: 5,
     name: "Debug with Simulation",
-    templateFromUser: "Please simulate the execution of this function: {function_code} with the input {input_values}. Walk through it line by line. What are the values of key variables at each step? Where do you think the logic might break or lead to an unexpected result: {expected_result} vs {actual_or_potential_issue}?",
-    purpose: "Get the assistant to simulate runtime behavior, trace variable states, and surface hidden bugs or logical flaws by thinking through execution paths.",
-    shortDescription: "Ask the AI to simulate code execution line-by-line with given inputs to identify bugs or logical flaws.",
+    templateFromUser: "Simulate this function: {function_code} with input {input_values}. Walk through it line by line. What are the variable values at each step? Where might it break given expected output {expected_result}?",
+    purpose: "Get the assistant to simulate runtime behavior and surface hidden bugs.",
+    shortDescription: "Simulate code execution to find bugs.",
     icon: Bug,
     category: "Debugging",
-    imagePlaceholderKeywords: "bug hunt"
+    imagePlaceholderKeywords: "bug hunt",
+    configurableParameterNames: ["expected_result"]
   },
   {
     jsonId: 6,
     name: "Feature Blueprinting",
-    templateFromUser: "I'm planning to build a new feature: {feature_name}. Key requirements are: {requirements_bullets}. The current tech stack includes: {tech_stack}. Please outline a high-level plan, suggest main components/modules, and scaffold the initial directory structure or key files. Explain your architectural choices.",
-    purpose: "Kick off feature development by having the AI help with planning, scaffolding, and architectural considerations based on requirements.",
-    shortDescription: "Use AI to plan and scaffold new features, including component outlines and architectural suggestions based on requirements.",
+    templateFromUser: "I'm building {feature_name}. Requirements: {requirements_bullets}. Using: {tech_stack}. Please scaffold the initial component(s) and explain your architectural choices.",
+    purpose: "Kick off feature development with AI-led planning and scaffolding.",
+    shortDescription: "Plan and scaffold new features with AI.",
     icon: Wrench,
     category: "Scaffolding",
-    imagePlaceholderKeywords: "project scaffold"
+    imagePlaceholderKeywords: "project scaffold",
+    configurableParameterNames: ["tech_stack"]
   },
   {
     jsonId: 7,
     name: "Code Refactor Guidance",
-    templateFromUser: "Please refactor this code snippet: {code_to_refactor}. The main goal is to improve {specific_goal_eg_readability_performance}. Consider {specific_techniques_or_patterns_eg_functional_programming_SOLID_principles}. Use comments to explain significant changes made.",
-    purpose: "Make AI refactors align with specific goals (e.g., readability, performance, adherence to patterns) rather than arbitrary changes.",
-    shortDescription: "Guide AI refactoring towards specific goals like readability or performance, using defined techniques or patterns.",
+    templateFromUser: "Refactor this code: {code_to_refactor} to improve {goal_eg_readability_performance}, using {techniques_eg_SOLID_principles}. Explain changes with comments.",
+    purpose: "Make AI refactors align with your goals, not arbitrary changes.",
+    shortDescription: "Guide AI refactoring towards specific goals.",
     icon: GitCompareArrows,
     category: "Refactoring",
-    imagePlaceholderKeywords: "code optimize"
+    imagePlaceholderKeywords: "code optimize",
+    configurableParameterNames: ["goal_eg_readability_performance", "techniques_eg_SOLID_principles"]
   },
   {
     jsonId: 8,
-    name: "Ask for Alternatives / Explore Styles",
-    templateFromUser: "Here's a piece of code: {code_snippet}. Can you show me how to achieve the same result using a {style_1_eg_functional} approach? What would a {style_2_eg_recursive} version look like? Compare the pros and cons.",
-    purpose: "Explore multiple implementation paths, coding styles, or alternative algorithms to expand understanding and find optimal solutions.",
-    shortDescription: "Request the AI to provide multiple implementation styles or alternative solutions for a given piece of code.",
+    name: "Ask for Alternatives",
+    templateFromUser: "For this code: {code_snippet}, show how to achieve the same result using a {style_1_eg_functional} approach. What would a {style_2_eg_recursive} version look like? Compare pros/cons.",
+    purpose: "Explore multiple implementation paths and expand your toolbox.",
+    shortDescription: "Request multiple implementation styles.",
     icon: BrainCircuit,
     category: "Exploration",
-    imagePlaceholderKeywords: "solution options"
+    imagePlaceholderKeywords: "solution options",
+    configurableParameterNames: ["style_1_eg_functional", "style_2_eg_recursive"]
   },
   {
     jsonId: 9,
-    name: "Rubber Ducking / Explain & Verify",
-    templateFromUser: "I'm trying to understand this function: {function_to_explain}. My current understanding is: {your_explanation}. Could you verify if my understanding is correct? Am I missing any edge cases or potential issues? Does this explanation reveal any bugs in the code itself?",
-    purpose: "Use the AI as a 'rubber duck' to articulate your understanding, allowing it to challenge assumptions, spot inconsistencies, or identify flaws in your logic or the code.",
-    shortDescription: "Explain your understanding of code to the AI, asking it to verify, find flaws, or identify missed edge cases.",
-    icon: MessageCircleQuestion,
+    name: "Rubber Ducking",
+    templateFromUser: "My understanding of this function: {function_to_explain} is: {your_explanation}. Am I missing anything? Does this reveal bugs?",
+    purpose: "Let the AI challenge your understanding and spot inconsistencies.",
+    shortDescription: "Explain code to AI for verification and insights.",
+    icon: HelpingHand,
     category: "Validation",
-    imagePlaceholderKeywords: "logic check"
+    imagePlaceholderKeywords: "logic check",
+    configurableParameterNames: []
   },
   {
     jsonId: 10,
     name: "Constraint Anchoring",
-    templateFromUser: "Generate code for {task_description}. Important constraints: must use {specific_libraries_or_versions}, must avoid {disallowed_patterns_or_functions}, and should optimize for {optimization_goal_eg_memory_cpu}. The target environment is {environment_details}. Here's some existing relevant code, if any: {existing_code_context}",
-    purpose: "Prevent the AI from overreaching, using deprecated methods, or introducing incompatible patterns by clearly stating constraints, allowed tools, and optimization targets.",
-    shortDescription: "Set specific constraints (libraries, patterns to avoid, optimization goals) to guide AI output and prevent unwanted results.",
-    icon: Filter,
+    templateFromUser: "Generate code for {task_description}. Constraints: use {specific_libraries_versions}, avoid {disallowed_patterns}, optimize for {optimization_goal_eg_memory}. Target environment: {environment_details}. Existing code context: {existing_code_context}",
+    purpose: "Prevent the AI from overreaching or introducing incompatible patterns.",
+    shortDescription: "Set specific constraints to guide AI output.",
+    icon: Filter, // Using Filter as a more direct match for constraints
     category: "Constraints",
-    imagePlaceholderKeywords: "guideline focus"
+    imagePlaceholderKeywords: "guideline focus",
+    configurableParameterNames: ["specific_libraries_versions", "disallowed_patterns", "optimization_goal_eg_memory", "environment_details"]
   }
 ];
 
-
 export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
-  // Convert {param} to ${param} for template
   const template = item.templateFromUser.replace(/\{(\w+)\}/g, (match, p1) => `\${${p1}}`);
-  const parameters = extractParameters(template);
+  
+  const extractedParams = extractParameters(template);
+  const parameters: PromptParameter[] = extractedParams.map(p => ({
+    ...p,
+    isConfigurable: item.configurableParameterNames?.includes(p.name) ?? false,
+    // Ensure defaultValue is preserved if any was part of original strategy definition (not applicable here as we derive from template)
+    defaultValue: p.defaultValue || '' 
+  }));
+
   const example = generateExample(template, parameters);
   const id = item.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
   return {
     id,
     name: item.name,
-    description: item.purpose, 
-    shortDescription: item.shortDescription, 
+    description: item.purpose,
+    shortDescription: item.shortDescription,
     template,
     parameters,
     example,
@@ -212,4 +245,3 @@ export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
     imagePlaceholderKeywords: item.imagePlaceholderKeywords,
   };
 });
-

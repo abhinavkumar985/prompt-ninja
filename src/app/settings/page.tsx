@@ -12,11 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Save, SlidersHorizontal, Settings2, RotateCcw } from 'lucide-react'; // Added RotateCcw for reset
+import { Save, SlidersHorizontal, Settings2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Type for storing configurations for all strategies
-type StrategyConfigurations = Record<string, Record<string, string>>; // Strategy ID -> { ParamName -> ParamValue }
+type StrategyConfigurations = Record<string, Record<string, string>>;
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -34,17 +33,18 @@ export default function SettingsPage() {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
-  // Effect to load/initialize form values when a strategy is selected or when stored configs change
   useEffect(() => {
     if (selectedStrategy) {
       const savedConfigForStrategy = allStrategyConfigs[selectedStrategy.id] || {};
       const initialValues: Record<string, string> = {};
       selectedStrategy.parameters.forEach(param => {
-        initialValues[param.name] = savedConfigForStrategy[param.name] ?? param.defaultValue ?? '';
+        if (param.isConfigurable) { // Only load/initialize for configurable params
+          initialValues[param.name] = savedConfigForStrategy[param.name] ?? param.defaultValue ?? '';
+        }
       });
       setCurrentFormValues(initialValues);
     } else {
-      setCurrentFormValues({}); // Clear form if no strategy is selected
+      setCurrentFormValues({});
     }
   }, [selectedStrategy, allStrategyConfigs]);
 
@@ -58,9 +58,18 @@ export default function SettingsPage() {
 
   const handleSaveConfiguration = () => {
     if (!selectedStrategy) return;
+
+    // Ensure we only save values for parameters that are marked as configurable
+    const configToSave: Record<string, string> = {};
+    selectedStrategy.parameters.forEach(param => {
+      if (param.isConfigurable && currentFormValues[param.name] !== undefined) {
+        configToSave[param.name] = currentFormValues[param.name];
+      }
+    });
+
     setAllStrategyConfigs(prev => ({
       ...prev,
-      [selectedStrategy.id]: currentFormValues,
+      [selectedStrategy.id]: configToSave,
     }));
     toast({
       title: 'Configuration Saved',
@@ -72,24 +81,30 @@ export default function SettingsPage() {
   const handleResetToDefaults = () => {
     if (!selectedStrategy) return;
     const defaultValues: Record<string, string> = {};
+    const configToSaveForReset: Record<string, string> = {};
+
     selectedStrategy.parameters.forEach(param => {
-      defaultValues[param.name] = param.defaultValue ?? '';
+      if (param.isConfigurable) {
+        const val = param.defaultValue ?? '';
+        defaultValues[param.name] = val;
+        configToSaveForReset[param.name] = val; // Also store this reset state
+      }
     });
     setCurrentFormValues(defaultValues);
-    // Also update local storage immediately to reflect reset
+    
     setAllStrategyConfigs(prev => ({
       ...prev,
-      [selectedStrategy.id]: defaultValues,
+      [selectedStrategy.id]: configToSaveForReset,
     }));
     toast({
       title: 'Configuration Reset',
-      description: `Default inputs for "${selectedStrategy.name}" have been reset.`,
+      description: `Default inputs for "${selectedStrategy.name}" have been reset to strategy defaults.`,
       duration: 3000,
     });
   };
 
   const renderParameterInput = (param: PromptParameter) => {
-    const value = currentFormValues[param.name] ?? '';
+    const value = currentFormValues[param.name] ?? ''; // Should always exist due to initialization
     switch (param.type) {
       case 'textarea':
         return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm"/>;
@@ -112,6 +127,8 @@ export default function SettingsPage() {
     }
   };
 
+  const configurableParameters = selectedStrategy?.parameters.filter(p => p.isConfigurable) || [];
+
   return (
     <div className="space-y-8">
       <section className="text-center">
@@ -124,13 +141,12 @@ export default function SettingsPage() {
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        {/* Left Panel: Strategy List */}
         <Card className="md:col-span-1 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-primary"/> Select Strategy</CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[calc(100vh-20rem)] pr-3"> {/* Adjust height as needed */}
+            <ScrollArea className="h-[calc(100vh-20rem)] pr-3">
               <div className="space-y-2">
                 {PROMPT_STRATEGIES.map(strategy => (
                   <Button
@@ -151,7 +167,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Right Panel: Configuration for Selected Strategy */}
         <Card className="md:col-span-2 shadow-lg">
           {selectedStrategy ? (
             <>
@@ -160,34 +175,38 @@ export default function SettingsPage() {
                   {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary"/>}
                   Configure: {selectedStrategy.name}
                 </CardTitle>
-                <CardDescription>Set default values for the parameters of this strategy. These will be used in the Playground.</CardDescription>
+                <CardDescription>Set default values for the configurable parameters of this strategy. These will be used in the Playground.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {selectedStrategy.parameters.length > 0 ? (
-                  selectedStrategy.parameters.map(param => (
+                {configurableParameters.length > 0 ? (
+                  configurableParameters.map(param => (
                     <div key={param.name} className="space-y-1.5">
                       <Label htmlFor={param.name} className="text-sm font-medium">{param.label}</Label>
                       {renderParameterInput(param)}
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">This strategy has no configurable parameters.</p>
+                  <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
                 )}
                 
-                <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <Button onClick={handleSaveConfiguration} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
-                    <Save className="mr-2 h-4 w-4" /> Save Configuration
-                  </Button>
-                  <Button onClick={handleResetToDefaults} variant="outline" className="w-full sm:w-auto">
-                    <RotateCcw className="mr-2 h-4 w-4" /> Reset to Strategy Defaults
-                  </Button>
-                </div>
+                {configurableParameters.length > 0 && (
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <Button onClick={handleSaveConfiguration} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Save className="mr-2 h-4 w-4" /> Save Configuration
+                    </Button>
+                    <Button onClick={handleResetToDefaults} variant="outline" className="w-full sm:w-auto">
+                      <RotateCcw className="mr-2 h-4 w-4" /> Reset to Strategy Defaults
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </>
           ) : (
-            <CardHeader>
+             <CardHeader> {/* Keep CardHeader for consistent structure even when no strategy selected */}
               <CardTitle>No Strategy Selected</CardTitle>
-              <CardDescription>Please select a strategy from the left panel to configure its default inputs.</CardDescription>
+              <CardContent> {/* Added CardContent for consistent padding */}
+                <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs.</p>
+              </CardContent>
             </CardHeader>
           )}
         </Card>
@@ -195,5 +214,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

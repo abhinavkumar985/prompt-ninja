@@ -32,7 +32,7 @@ export default function PlaygroundPage() {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
-  useEffect(()_ => {
+  useEffect(() => {
     if (selectedStrategy) {
       const defaultValues: Record<string, string> = {};
       selectedStrategy.parameters.forEach(param => {

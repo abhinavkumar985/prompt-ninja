@@ -1,17 +1,16 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CopyButton } from '@/components/CopyButton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react'; // Keep for Alert icon
+import { Info } from 'lucide-react';
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -26,20 +25,22 @@ export default function PlaygroundPage() {
     {}
   );
 
+  // Initialize selected strategy from query params or first available strategy
   useEffect(() => {
     document.title = 'Prompt Generator - PromptNin';
     const strategyIdFromQuery = searchParams.get('strategy');
     if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
       setSelectedStrategyId(strategyIdFromQuery);
-    } else if (PROMPT_STRATEGIES.length > 0) {
+    } else if (PROMPT_STRATEGIES.length > 0 && !selectedStrategyId) {
       setSelectedStrategyId(PROMPT_STRATEGIES[0].id);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedStrategyId]);
 
   const selectedStrategy = useMemo(() => {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
+  // Update input values when strategy or its saved config changes
   useEffect(() => {
     if (selectedStrategy) {
       const savedConfigForStrategy = allStrategyConfigs[selectedStrategy.id] || {};
@@ -55,15 +56,12 @@ export default function PlaygroundPage() {
         }
       });
       // Ensure main_input is initialized, possibly overriding defaults if it's not configurable
-      if (!newDefaultValues['main_input']) {
+      if (newDefaultValues['main_input'] === undefined) {
          newDefaultValues['main_input'] = selectedStrategy.parameters.find(p => p.name === 'main_input')?.defaultValue || '';
       }
-
       setInputValues(newDefaultValues);
-      setGeneratedPrompt(''); // Clear prompt when strategy or its defaults change
     } else {
       setInputValues({});
-      setGeneratedPrompt('');
     }
   }, [selectedStrategy, allStrategyConfigs]);
 
@@ -75,15 +73,24 @@ export default function PlaygroundPage() {
     setSelectedStrategyId(strategyId);
   };
 
-  const handleGeneratePrompt = () => {
-    if (!selectedStrategy) return;
+  const generatePromptCallback = useCallback(() => {
+    if (!selectedStrategy) {
+      setGeneratedPrompt(''); // Clear prompt if no strategy is selected
+      return;
+    }
     let prompt = selectedStrategy.template;
     selectedStrategy.parameters.forEach(param => {
       const regex = new RegExp(`\\$\\{${param.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
       prompt = prompt.replace(regex, inputValues[param.name] || '');
     });
     setGeneratedPrompt(prompt);
-  };
+  }, [selectedStrategy, inputValues]);
+
+  // Automatically generate prompt when selectedStrategy or inputValues change
+  useEffect(() => {
+    generatePromptCallback();
+  }, [generatePromptCallback]);
+
 
   const renderParameterInput = (param: PromptParameter) => {
     const value = inputValues[param.name] || '';
@@ -128,7 +135,16 @@ export default function PlaygroundPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           <section className="flex flex-col gap-4 p-4">
-            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">1. Select a technique</h3>
+            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">Input your code or error</h3>
+            <Textarea
+              value={inputValues['main_input'] || ''}
+              onChange={e => handleInputChange('main_input', e.target.value)}
+              className="w-full bg-input border-border rounded-lg p-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              placeholder="Paste your code snippet, error message, or question here..."
+              rows={selectedStrategy?.parameters.find(p=>p.name === 'main_input')?.rows || 8}
+            />
+
+            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em] pt-4">Select a technique</h3>
             <div className="flex flex-wrap gap-3">
               {PROMPT_STRATEGIES.map(strategy => (
                 <label
@@ -150,65 +166,41 @@ export default function PlaygroundPage() {
             </div>
 
             {selectedStrategy && (
-              <Alert variant="default" className="shadow-lg bg-card border-border text-card-foreground mt-4">
-                <Info className="h-5 w-5 text-primary" />
-                <AlertTitle className="font-semibold text-card-foreground">{selectedStrategy.name}</AlertTitle>
-                <AlertDescription className="text-muted-foreground">
-                  {selectedStrategy.description}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {additionalParameters && additionalParameters.length > 0 && (
               <div className="pt-4">
-                 <h3 className="text-foreground text-lg font-medium leading-tight tracking-[-0.015em] mb-2">Configure Strategy Parameters:</h3>
-                {additionalParameters.map(param => renderParameterInput(param))}
+                <Alert variant="default" className="shadow-lg bg-card border-border text-card-foreground mt-4">
+                  <Info className="h-5 w-5 text-primary" />
+                  <AlertTitle className="font-semibold text-card-foreground">{selectedStrategy.name}</AlertTitle>
+                  <AlertDescription className="text-muted-foreground">
+                    {selectedStrategy.description}
+                  </AlertDescription>
+                </Alert>
+                {additionalParameters && additionalParameters.length > 0 && (
+                  <div className="pt-4">
+                    <h3 className="text-foreground text-lg font-medium leading-tight tracking-[-0.015em] mb-2">Configure Strategy Parameters:</h3>
+                    {additionalParameters.map(param => renderParameterInput(param))}
+                  </div>
+                )}
               </div>
             )}
-
-            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em] pt-4">2. Input your code or error</h3>
-            <Textarea
-              value={inputValues['main_input'] || ''}
-              onChange={e => handleInputChange('main_input', e.target.value)}
-              className="w-full bg-input border-border rounded-lg p-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-              placeholder="Paste your code snippet, error message, or question here..."
-              rows={selectedStrategy?.parameters.find(p=>p.name === 'main_input')?.rows || 8}
-            />
           </section>
 
-          <section className="flex flex-col gap-4 p-4 bg-card rounded-lg">
-            <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
-            <div className="bg-background border-border rounded-lg p-4 min-h-[200px] text-muted-foreground text-sm whitespace-pre-wrap overflow-auto">
-              {generatedPrompt || "Your generated prompt will appear here..."}
+          <section className="flex flex-col gap-4 p-4 bg-card rounded-lg relative">
+            <div className="flex justify-between items-center">
+                <h3 className="text-foreground text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
+                <CopyButton
+                    textToCopy={generatedPrompt}
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80 !absolute top-4 right-4"
+                    size="sm"
+                >
+                    <span className="material-icons text-base mr-1">content_copy</span>
+                    Copy
+                </CopyButton>
             </div>
-            <div className="flex gap-3 mt-auto">
-              <CopyButton
-                textToCopy={generatedPrompt}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <span className="material-icons text-base mr-2">content_copy</span>
-                Copy Prompt
-              </CopyButton>
-              <Button
-                onClick={handleGeneratePrompt}
-                disabled={!selectedStrategy}
-                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              >
-                <span className="material-icons text-base mr-2">refresh</span>
-                Regenerate
-              </Button>
+            <div className="bg-background border-border rounded-lg p-4 min-h-[200px] text-muted-foreground text-sm whitespace-pre-wrap overflow-auto flex-grow">
+              {generatedPrompt || "Your generated prompt will appear here..."}
             </div>
           </section>
         </div>
-
-        <Button
-          onClick={handleGeneratePrompt}
-          disabled={!selectedStrategy}
-          className="w-full md:w-auto self-center flex min-w-[120px] max-w-[480px] cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded-lg h-12 px-6 bg-primary text-primary-foreground text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
-        >
-          <span className="material-icons">auto_awesome</span>
-          <span className="truncate">Generate Prompt</span>
-        </Button>
       </div>
     </main>
   );

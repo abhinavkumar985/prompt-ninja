@@ -14,7 +14,7 @@ export const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft"
 
 const navItems = [
   { href: '/playground', label: 'Playground', icon: Wand2 },
-  { href: '/contribution-guide', label: 'Contribute', icon: Handshake, highlight: true },
+  { href: '/contribution-guide', label: 'Contribute', icon: Handshake },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -50,8 +50,6 @@ export function Header() {
                   "flex items-center gap-2 px-3 py-2 rounded-md transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground font-semibold"
-                    : item.highlight
-                    ? "bg-accent text-accent-foreground hover:bg-accent/80"
                     : "text-secondary-foreground hover:text-primary hover:bg-accent/20"
                 )}
               >
@@ -111,8 +109,6 @@ export function Header() {
                         "flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium transition-colors",
                         isActive
                           ? "bg-primary text-primary-foreground font-semibold"
-                          : item.highlight
-                          ? "bg-accent text-accent-foreground"
                           : "text-secondary-foreground hover:bg-secondary/80 hover:text-primary"
                       )}
                     >

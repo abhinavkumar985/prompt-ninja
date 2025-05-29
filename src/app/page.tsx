@@ -35,7 +35,7 @@ export default function HomePage() {
         <section className="w-full py-16 text-center md:py-24">
           <div className="hero-gradient-bg flex min-h-[400px] flex-col items-center justify-center gap-6 rounded-xl bg-cover bg-center bg-no-repeat p-6 shadow-2xl sm:min-h-[480px] sm:gap-8 sm:p-10 md:p-16">
             <h1 className="text-4xl font-black leading-tight tracking-tighter text-primary sm:text-5xl md:text-6xl">
-              Prompt like a pro. <br className="hidden sm:inline"/>No AI, no backend, no data risks.
+              Prompt like a pro. <br className="hidden sm:inline" />No AI, no backend, no data risks.
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground sm:text-xl">
               Generate superior prompts for AI code assistants, instantly and securely, right in your browser.
@@ -111,11 +111,20 @@ export default function HomePage() {
               <p className="text-muted-foreground">Instantly get your optimized prompt and use it with your favorite AI code assistant.</p>
             </div>
           </div>
-          <div className="mt-12 p-6 rounded-lg bg-card shadow-lg">
+          {/* <div className="mt-12 p-6 rounded-lg bg-card shadow-lg">
             <p className="text-muted-foreground text-center text-base leading-relaxed">
               PromptNin operates entirely within your browser, ensuring your data remains private and secure. It uses a library of proven prompting strategies to generate effective prompts instantly, without relying on AI or backend processing. This means no data is stored or transmitted, providing a risk-free environment for prompt creation.
             </p>
-          </div>
+          </div> */}
+          <section className="bg-green-800/30 border border-green-500 p-6 rounded-xl shadow-lg text-center mt-12 bg-card shadow-lg">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <span className="material-icons text-3xl text-green-400">verified_user</span>
+              <h3 className="text-xl font-semibold text-green-300">Privacy by Design</h3>
+            </div>
+            <p className="text-green-200 text-base font-normal leading-relaxed">
+            PromptNin operates entirely within your browser, ensuring your data remains private and secure. It uses a library of proven prompting strategies to generate effective prompts instantly, without relying on AI or backend processing. This means no data is stored or transmitted, providing a risk-free environment for prompt creation.
+            </p>
+          </section>
         </section>
       </div>
     </main>

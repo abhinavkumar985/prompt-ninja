@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { LogoIcon } from '@/components/icons/LogoIcon';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Settings, BookOpen, Wand2, Github } from 'lucide-react';
+import { Menu, Settings, BookOpen, Wand2, Github, HelpCircle } from 'lucide-react'; // Added HelpCircle
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -15,18 +15,16 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-// Determine this URL from your project's GitHub repository
-const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft";
-
+export const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft"; // Keep this exported
 
 export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <LogoIcon className="h-7 w-7" />
+          <LogoIcon className="h-8 w-8 text-primary" /> {/* Uses new primary color for logo */}
           <span>PromptNin</span>
         </Link>
 
@@ -35,12 +33,18 @@ export function Header() {
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               let itemClasses;
+              // Active state uses primary-foreground on primary background
               if (isActive) {
                 itemClasses = 'bg-primary text-primary-foreground hover:bg-primary/90';
-              } else if (item.highlight) {
-                itemClasses = 'bg-accent text-accent-foreground hover:bg-accent/80';
-              } else {
-                itemClasses = 'text-foreground hover:bg-accent hover:text-accent-foreground';
+              } 
+              // Highlighted (Contribute) link when not active
+              else if (item.highlight) {
+                // Uses accent (link color) for text on secondary background for "Contribute"
+                itemClasses = 'bg-secondary text-accent hover:bg-secondary/80';
+              } 
+              // Default links
+              else {
+                itemClasses = 'text-foreground hover:bg-secondary hover:text-accent';
               }
               return (
                 <Button
@@ -61,7 +65,7 @@ export function Header() {
             })}
           </nav>
 
-          <Button asChild variant="default" className="ml-3 hidden md:inline-flex bg-slate-800 hover:bg-slate-700 text-white h-auto py-1.5 px-3">
+          <Button asChild variant="default" className="ml-3 hidden md:inline-flex bg-secondary hover:bg-secondary/80 text-accent h-auto py-1.5 px-3">
             <Link href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer">
               <Github className="h-4 w-4 mr-2" />
               GitHub
@@ -72,15 +76,15 @@ export function Header() {
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="border-primary text-primary hover:bg-primary/10">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent side="right" className="bg-background border-border">
               <nav className="grid gap-4 py-6">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-foreground mb-4">
-                  <LogoIcon className="h-7 w-7" />
+                  <LogoIcon className="h-7 w-7 text-primary" />
                   <span>PromptNin</span>
                 </Link>
                 {navItems.map((item) => {
@@ -89,9 +93,9 @@ export function Header() {
                   if (isActive) {
                     mobileItemClasses = 'bg-primary text-primary-foreground';
                   } else if (item.highlight) {
-                    mobileItemClasses = 'bg-accent text-accent-foreground';
+                    mobileItemClasses = 'bg-secondary text-accent';
                   } else {
-                    mobileItemClasses = 'text-foreground hover:bg-accent hover:text-accent-foreground';
+                    mobileItemClasses = 'text-foreground hover:bg-secondary hover:text-accent';
                   }
                   return (
                     <Link
@@ -111,7 +115,7 @@ export function Header() {
                   href={GITHUB_REPO_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+                  className="flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-secondary hover:text-accent"
                 >
                   <Github className="h-5 w-5" />
                   <span>GitHub</span>

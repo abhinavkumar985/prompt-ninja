@@ -1,24 +1,17 @@
 import type { SVGProps } from 'react';
 
+// New logo from the user's HTML for the contribution page header
 export function LogoIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="24" // Default width, can be overridden by props or className
-      height="24" // Default height, can be overridden by props or className
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor" // Will take color from parent by default
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      width="32" // Default width from h-8
+      height="32" // Default height from w-8
+      viewBox="0 0 48 48"
+      fill="currentColor" // Changed to currentColor to inherit text color
       {...props} // Spread props to allow overriding (e.g., className for size/color)
     >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
-      <path d="M5 3v4"></path>
-      <path d="M19 17v4"></path>
-      <path d="M3 5h4"></path>
-      <path d="M17 19h4"></path>
+      <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z"></path>
     </svg>
   );
 }

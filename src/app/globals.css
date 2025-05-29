@@ -4,43 +4,78 @@
 
 @layer base {
   :root {
-    --background: 220 17% 95%; /* Light Gray #F0F2F5 */
-    --foreground: 220 10% 25%; /* Dark Gray for text */
+    /* Dark theme variables (will be default) */
+    --background: 210 10% 7%; /* #121416 */
+    --foreground: 210 43% 86%; /* #dce8f3 */
 
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 220 10% 25%;
+    --card: 210 11% 11%; /* #1a1d20 */
+    --card-foreground: 210 43% 86%;
 
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 220 10% 25%;
+    --popover: 210 11% 11%;
+    --popover-foreground: 210 43% 86%;
 
-    --primary: 196 77% 53%; /* #29ABE2 - Vibrant Blue from PRD */
-    --primary-foreground: 0 0% 100%; /* White */
+    /* Primary for CTAs/selected items (light on dark) */
+    --primary: 210 43% 86%; /* #dce8f3 */
+    --primary-foreground: 210 10% 7%; /* #121416 */
 
-    --secondary: 220 15% 90%;
-    --secondary-foreground: 220 10% 20%;
+    /* Secondary for less prominent interactive elements */
+    --secondary: 210 7% 20%; /* #2c3135 */
+    --secondary-foreground: 210 8% 81%; /* text-gray-300 like */
+    
+    --muted: 210 8% 25%; /* Darker muted background */
+    --muted-foreground: 210 8% 55%; /* Lighter muted text (gray-400 like) */
 
-    --muted: 220 15% 90%;
-    --muted-foreground: 220 10% 45%; /* Lighter gray for muted text */
+    --accent: 207 41% 62%; /* #7aa5c7 for links */
+    --accent-foreground: 207 41% 62%; /* Link color */
 
-    --accent: 200 100% 95%; /* #E6F7FF - Very light blue for selected/accented items */
-    --accent-foreground: 196 77% 53%; /* Primary blue for text on light accent */
+    --destructive: 0 63% 31%; /* Dark red */
+    --destructive-foreground: 0 0% 98%; /* Light text on dark red */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 10% 88%; 
-    --input: 220 10% 92%;
-    --ring: 196 77% 53%; /* Primary blue for rings */
+    --border: 210 7% 20%; /* #2c3135 */
+    --input: 213 8% 16%; /* #25292d */
+    --ring: 207 41% 62%; /* Accent color for focus rings */
 
     --radius: 0.5rem;
 
-    --chart-1: 196 77% 53%; /* Adjusted to new primary */
-    --chart-2: 200 80% 60%; /* Adjusted to a lighter blue */
-    --chart-3: 210 70% 40%; /* Adjusted to a darker blue */
-    --chart-4: 190 70% 50%;
-    --chart-5: 205 75% 55%;
+    --chart-1: 207 41% 62%;
+    --chart-2: 210 43% 70%;
+    --chart-3: 210 10% 50%;
+    --chart-4: 207 41% 50%;
+    --chart-5: 210 43% 60%;
 
-    /* Sidebar variables */
+    /* Sidebar variables - adjusted for dark theme */
+    --sidebar-background: 210 10% 9%; /* Slightly lighter than main bg */
+    --sidebar-foreground: 210 20% 75%;
+    --sidebar-primary: 210 43% 86%; /* Light primary for selected items */
+    --sidebar-primary-foreground: 210 10% 7%; /* Dark text on light primary */
+    --sidebar-accent: 210 7% 20%; /* Accent for hover */
+    --sidebar-accent-foreground: 210 43% 86%;
+    --sidebar-border: 210 7% 15%;
+    --sidebar-ring: 207 41% 62%;
+  }
+
+  /* Light theme override (if ever needed via a class) */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 220 10% 25%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 10% 25%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 10% 25%;
+    --primary: 196 77% 53%; 
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 90%;
+    --secondary-foreground: 220 10% 20%;
+    --muted: 220 15% 90%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 200 100% 95%;
+    --accent-foreground: 196 77% 53%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 10% 88%;
+    --input: 220 10% 92%;
+    --ring: 196 77% 53%;
+
     --sidebar-background: 220 10% 15%; 
     --sidebar-foreground: 220 15% 80%;
     --sidebar-primary: 196 77% 53%;
@@ -48,46 +83,6 @@
     --sidebar-accent: 200 100% 95%;
     --sidebar-accent-foreground: 196 77% 53%;
     --sidebar-border: 220 10% 25%;
-    --sidebar-ring: 196 77% 53%;
-  }
-
-  .dark {
-    --background: 220 10% 12%;
-    --foreground: 220 15% 90%;
-
-    --card: 220 10% 15%;
-    --card-foreground: 220 15% 90%;
-
-    --popover: 220 10% 15%;
-    --popover-foreground: 220 15% 90%;
-
-    --primary: 196 77% 53%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 10% 20%;
-    --secondary-foreground: 220 15% 90%;
-
-    --muted: 220 10% 20%;
-    --muted-foreground: 220 10% 55%;
-
-    --accent: 200 80% 25%; /* Darker light blue for dark mode accent bg */
-    --accent-foreground: 196 85% 75%; /* Lighter primary blue for text on dark accent */
-
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 10% 25%;
-    --input: 220 10% 20%;
-    --ring: 196 77% 53%;
-
-    /* Dark sidebar variables */
-    --sidebar-background: 220 10% 10%;
-    --sidebar-foreground: 220 15% 85%;
-    --sidebar-primary: 196 77% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 80% 25%;
-    --sidebar-accent-foreground: 196 85% 75%;
-    --sidebar-border: 220 10% 20%;
     --sidebar-ring: 196 77% 53%;
   }
 }
@@ -103,7 +98,9 @@
 
 @layer components {
   .gradient-text {
-    background: linear-gradient(to right, #0c7ff2, #3b82f6); /* Keeping this specific gradient for landing page title as per user's HTML */
+    /* This gradient might need adjustment if it's to be used on a dark background */
+    /* For now, keeping it as is, but it's designed for light backgrounds */
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

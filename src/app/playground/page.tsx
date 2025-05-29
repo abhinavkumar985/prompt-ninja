@@ -47,10 +47,6 @@ export default function PlaygroundPage() {
       const newDefaultValues: Record<string, string> = {};
 
       selectedStrategy.parameters.forEach(param => {
-        // Priority:
-        // 1. Value from saved configuration (local storage) IF param is configurable
-        // 2. Default value from strategy definition (prompt-strategies.ts)
-        // 3. Empty string
         if (param.isConfigurable && savedConfigForStrategy[param.name] !== undefined) {
           newDefaultValues[param.name] = savedConfigForStrategy[param.name];
         } else if (param.defaultValue) {
@@ -61,6 +57,9 @@ export default function PlaygroundPage() {
       });
       setInputValues(newDefaultValues);
       setGeneratedPrompt(''); 
+    } else {
+      setInputValues({});
+      setGeneratedPrompt('');
     }
   }, [selectedStrategy, allStrategyConfigs]);
 
@@ -72,7 +71,7 @@ export default function PlaygroundPage() {
     if (!selectedStrategy) return;
     let prompt = selectedStrategy.template;
     selectedStrategy.parameters.forEach(param => {
-      const regex = new RegExp(`\\$\\{${param.name}\\}`, 'g');
+      const regex = new RegExp(`\\$\\{${param.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
       prompt = prompt.replace(regex, inputValues[param.name] || '');
     });
     setGeneratedPrompt(prompt);
@@ -82,14 +81,14 @@ export default function PlaygroundPage() {
     const value = inputValues[param.name] || '';
     switch (param.type) {
       case 'textarea':
-        return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm"/>;
+        return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm bg-input text-foreground"/>;
       case 'select':
         return (
           <Select value={value} onValueChange={val => handleInputChange(param.name, val)}>
-            <SelectTrigger id={param.name}>
+            <SelectTrigger id={param.name} className="bg-input text-foreground">
               <SelectValue placeholder={param.placeholder || `Select ${param.label}`} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover text-popover-foreground">
               {param.options?.map(option => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
               ))}
@@ -98,7 +97,7 @@ export default function PlaygroundPage() {
         );
       case 'text':
       default:
-        return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm"/>;
+        return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm bg-input text-foreground"/>;
     }
   };
   
@@ -107,7 +106,7 @@ export default function PlaygroundPage() {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-foreground">
       <section className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Prompt Playground</h1>
         <p className="mt-3 max-w-xl mx-auto text-lg text-muted-foreground">
@@ -116,19 +115,19 @@ export default function PlaygroundPage() {
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="lg:col-span-1 shadow-lg">
+        <Card className="lg:col-span-1 shadow-xl bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Wand2 className="h-6 w-6 text-primary" /> Configure Strategy</CardTitle>
-            <CardDescription>Select a strategy and fill in the parameters to generate your prompt. Default values from Settings will be pre-filled for configurable parameters.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-card-foreground"><Wand2 className="h-6 w-6 text-primary" /> Configure Strategy</CardTitle>
+            <CardDescription className="text-muted-foreground">Select a strategy and fill in the parameters to generate your prompt. Default values from Settings will be pre-filled for configurable parameters.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label htmlFor="strategy-select" className="text-sm font-medium">Prompt Strategy</Label>
+              <Label htmlFor="strategy-select" className="text-sm font-medium text-card-foreground">Prompt Strategy</Label>
               <Select value={selectedStrategyId || ''} onValueChange={id => setSelectedStrategyId(id)}>
-                <SelectTrigger id="strategy-select">
+                <SelectTrigger id="strategy-select" className="bg-input text-foreground">
                   <SelectValue placeholder="Select a strategy" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover text-popover-foreground border-border">
                   {PROMPT_STRATEGIES.map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -138,7 +137,7 @@ export default function PlaygroundPage() {
 
             {selectedStrategy && selectedStrategy.parameters.map(param => (
               <div key={param.name} className="space-y-1.5">
-                <Label htmlFor={param.name} className="text-sm font-medium">{param.label}</Label>
+                <Label htmlFor={param.name} className="text-sm font-medium text-card-foreground">{param.label}</Label>
                 {renderParameterInput(param)}
               </div>
             ))}
@@ -151,29 +150,29 @@ export default function PlaygroundPage() {
 
         <div className="lg:col-span-2 space-y-8">
           {selectedStrategy && (
-            <Alert variant="default" className="shadow">
+            <Alert variant="default" className="shadow-lg bg-card border-border text-card-foreground">
               <Info className="h-5 w-5 text-primary" />
-              <AlertTitle className="font-semibold">{selectedStrategy.name}</AlertTitle>
-              <AlertDescription>
+              <AlertTitle className="font-semibold text-card-foreground">{selectedStrategy.name}</AlertTitle>
+              <AlertDescription className="text-muted-foreground">
                 {selectedStrategy.description}
               </AlertDescription>
             </Alert>
           )}
 
-          <Card className="shadow-lg">
+          <Card className="shadow-xl bg-card border-border">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6 text-primary" /> Generated Prompt</CardTitle>
-                <CopyButton textToCopy={generatedPrompt} />
+                <CardTitle className="flex items-center gap-2 text-card-foreground"><FileText className="h-6 w-6 text-primary" /> Generated Prompt</CardTitle>
+                <CopyButton textToCopy={generatedPrompt} variant="outline" className="border-primary text-primary hover:bg-primary/10" />
               </div>
-              <CardDescription>This is the AI prompt generated based on your selections. Copy and use it with your preferred AI tool.</CardDescription>
+              <CardDescription className="text-muted-foreground">This is the AI prompt generated based on your selections. Copy and use it with your preferred AI tool.</CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
                 readOnly
                 value={generatedPrompt}
                 placeholder="Your generated prompt will appear here..."
-                className="min-h-[200px] lg:min-h-[300px] font-mono text-sm bg-muted/30 border-dashed"
+                className="min-h-[200px] lg:min-h-[300px] font-mono text-sm bg-input/50 border-dashed border-border text-foreground"
                 aria-label="Generated Prompt"
               />
             </CardContent>
@@ -181,21 +180,21 @@ export default function PlaygroundPage() {
         </div>
       </div>
        {selectedStrategy?.example && (
-        <Card className="mt-8 shadow-lg">
+        <Card className="mt-8 shadow-xl bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5 text-primary"/> Example Usage</CardTitle>
-            <CardDescription>An example of how this strategy can be used.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-card-foreground"><Info className="h-5 w-5 text-primary"/> Example Usage</CardTitle>
+            <CardDescription className="text-muted-foreground">An example of how this strategy can be used.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-medium text-sm mb-1">Example Inputs:</h4>
-              <pre className="p-3 bg-muted rounded-md text-xs font-mono overflow-x-auto">
+              <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Inputs:</h4>
+              <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
                 {JSON.stringify(selectedStrategy.example.inputs, null, 2)}
               </pre>
             </div>
             <div>
-              <h4 className="font-medium text-sm mb-1">Example Output Prompt:</h4>
-              <pre className="p-3 bg-muted rounded-md text-xs font-mono overflow-x-auto">
+              <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Output Prompt:</h4>
+              <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
                 {selectedStrategy.example.output}
               </pre>
             </div>

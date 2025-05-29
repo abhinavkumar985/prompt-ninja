@@ -29,7 +29,7 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
       value: strategy.example.inputs[p.name],
     }))
     .sort((a, b) => b.value.length - a.value.length); // Longer matches first
-
+  
   // Moved regexParts initialization before its use
   const regexParts = configurableParams.map(p =>
     p.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
@@ -106,7 +106,7 @@ export default function PlaygroundPage() {
           newDefaultValues[param.name] = '';
         }
       });
-      // Ensure main_input is always initialized, even if not explicitly saved or defaulted for some reason
+      // Ensure main_input is always initialized
       if (newDefaultValues['main_input'] === undefined) {
         newDefaultValues['main_input'] = selectedStrategy.parameters.find(p => p.name === 'main_input')?.defaultValue || '';
       }
@@ -165,8 +165,7 @@ export default function PlaygroundPage() {
 
   const renderParameterInput = (param: PromptParameter) => {
     const value = inputValues[param.name] || '';
-    // Only render non-main_input parameters here. main_input is handled by the dedicated Textarea.
-    if (param.name === 'main_input') return null;
+    if (param.name === 'main_input' || !param.isConfigurable) return null; // Only render configurable, non-main_input params here
 
     return (
       <div key={param.name} className="space-y-1.5 mb-4">
@@ -183,7 +182,7 @@ export default function PlaygroundPage() {
         ) : (
           <Input
             id={param.name}
-            type="text" // Assuming other types like 'select' are handled or simplified to text for playground
+            type="text"
             value={value}
             onChange={e => handleInputChange(param.name, e.target.value)}
             placeholder={param.placeholder}
@@ -194,7 +193,7 @@ export default function PlaygroundPage() {
     );
   };
 
-  const additionalParameters = selectedStrategy?.parameters.filter(p => p.name !== 'main_input');
+  const additionalParameters = selectedStrategy?.parameters.filter(p => p.name !== 'main_input' && p.isConfigurable);
 
   return (
     <main className="px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-8 lg:py-12 text-foreground">
@@ -219,41 +218,40 @@ export default function PlaygroundPage() {
             <TooltipProvider delayDuration={300}>
               <div className="flex flex-wrap gap-3">
                 {PROMPT_STRATEGIES.map(strategy => (
-                  <div key={strategy.id} className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <label
-                          className={`text-sm font-medium leading-normal flex items-center justify-center rounded-lg border px-4 py-2.5 relative cursor-pointer transition-all hover:border-primary/50
-                            ${selectedStrategyId === strategy.id ? 'border-2 border-primary bg-primary/10' : 'border-border text-foreground bg-card hover:bg-secondary'}`}
-                        >
-                          {strategy.name}
-                          <input
-                            type="radio"
-                            name="prompting_technique"
-                            value={strategy.id}
-                            checked={selectedStrategyId === strategy.id}
-                            onChange={() => handleStrategyChange(strategy.id)}
-                            className="sr-only"
-                          />
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-popover text-popover-foreground border-border shadow-lg max-w-md p-3">
-                        <p className="text-sm font-semibold mb-1">Example for {strategy.name}:</p>
-                        <div className="whitespace-pre-wrap text-xs opacity-90">
-                          {generateHighlightedExamplePrompt(strategy)}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary"
-                      onClick={() => router.push(`/settings?strategy=${strategy.id}`)}
-                      title={`Update default config for ${strategy.name}`}
-                    >
-                      <span className="material-icons text-lg">tune</span>
-                    </Button>
-                  </div>
+                  <Tooltip key={strategy.id}>
+                    <TooltipTrigger asChild>
+                      <label
+                        className={`text-sm font-medium leading-normal flex items-center justify-center rounded-lg border px-4 py-2.5 relative cursor-pointer transition-all hover:border-primary/50
+                          ${selectedStrategyId === strategy.id ? 'border-2 border-primary bg-primary/10' : 'border-border text-foreground bg-card hover:bg-secondary'}`}
+                      >
+                        {strategy.name}
+                        <input
+                          type="radio"
+                          name="prompting_technique"
+                          value={strategy.id}
+                          checked={selectedStrategyId === strategy.id}
+                          onChange={() => handleStrategyChange(strategy.id)}
+                          className="sr-only"
+                        />
+                      </label>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-popover text-popover-foreground border-border shadow-lg max-w-md p-3">
+                      <p className="text-sm font-semibold mb-1">Example for {strategy.name}:</p>
+                      <div className="whitespace-pre-wrap text-xs opacity-90 mb-3">
+                        {generateHighlightedExamplePrompt(strategy)}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-primary text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={() => router.push(`/settings?strategy=${strategy.id}`)}
+                        title={`Update default config for ${strategy.name}`}
+                      >
+                        <span className="material-icons text-base mr-1.5">tune</span>
+                        Update Config
+                      </Button>
+                    </TooltipContent>
+                  </Tooltip>
                 ))}
               </div>
             </TooltipProvider>
@@ -285,7 +283,7 @@ export default function PlaygroundPage() {
                     disabled={!generatedPrompt || isCopied}
                     variant="default"
                     size="sm"
-                    className="font-semibold !absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="font-semibold absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                     <span className="material-icons text-base mr-1.5">content_copy</span>
                     Copy

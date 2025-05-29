@@ -30,16 +30,17 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
     }))
     .sort((a, b) => b.value.length - a.value.length); // Longer matches first
 
+  // Moved regexParts initialization before its use
+  const regexParts = configurableParams.map(p =>
+    p.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
+  );
+
   if (regexParts.length === 0 && !output) {
     return "No example available or no configurable parameters to highlight.";
   }
   if (regexParts.length === 0) {
-    return output; 
+    return output;
   }
-  
-  const regexParts = configurableParams.map(p =>
-    p.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
-  );
 
   const regex = new RegExp(`(${regexParts.join('|')})`, 'g');
   let match;
@@ -58,7 +59,7 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
   if (currentIndex < output.length) {
     parts.push(output.substring(currentIndex));
   }
-  
+
   return parts.length > 0 ? <>{parts}</> : output;
 }
 
@@ -105,6 +106,7 @@ export default function PlaygroundPage() {
           newDefaultValues[param.name] = '';
         }
       });
+      // Ensure main_input is always initialized, even if not explicitly saved or defaulted for some reason
       if (newDefaultValues['main_input'] === undefined) {
         newDefaultValues['main_input'] = selectedStrategy.parameters.find(p => p.name === 'main_input')?.defaultValue || '';
       }
@@ -163,17 +165,8 @@ export default function PlaygroundPage() {
 
   const renderParameterInput = (param: PromptParameter) => {
     const value = inputValues[param.name] || '';
-    if (param.name === 'main_input' || param.isConfigurable === false) return null; // Only show non-main, configurable params here now. Main input is separate. Non-configurable driven by defaults.
-
-    // This section is now for additional parameters specific to strategy displayed AFTER strategy selection
-    // And it should only be for those NOT main_input AND isConfigurable might be too restrictive here,
-    // It depends on what should be tweakable runtime vs set as default.
-    // For Role Prompting, 'language' and 'goal' are good examples.
-    // Let's re-evaluate: parameters that ARE NOT main_input AND are part of the strategy's `parameters` list.
-    // `isConfigurable` is for settings page. Here we show all non-main_input parameters for runtime adjustments.
-
+    // Only render non-main_input parameters here. main_input is handled by the dedicated Textarea.
     if (param.name === 'main_input') return null;
-
 
     return (
       <div key={param.name} className="space-y-1.5 mb-4">
@@ -200,7 +193,7 @@ export default function PlaygroundPage() {
       </div>
     );
   };
-  
+
   const additionalParameters = selectedStrategy?.parameters.filter(p => p.name !== 'main_input');
 
   return (
@@ -291,7 +284,7 @@ export default function PlaygroundPage() {
                     onClick={handleCopyPrompt}
                     disabled={!generatedPrompt || isCopied}
                     variant="default"
-                    size="sm"    
+                    size="sm"
                     className="font-semibold !absolute top-4 right-4 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                     <span className="material-icons text-base mr-1.5">content_copy</span>

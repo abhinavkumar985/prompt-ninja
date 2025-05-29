@@ -6,10 +6,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+// Input component is no longer needed as only Textarea is used for direct input here
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button'; // Keep Button import
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LucideIcon } from 'lucide-react';
@@ -86,7 +86,7 @@ export default function PlaygroundPage() {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
-  const [inputValues, setInputValues] = useState<Record<string, string>>({});
+  const [inputValues, setInputValues] = useState<Record<string, string>>({ main_input: '' });
   const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
 
   useEffect(() => {
@@ -96,26 +96,25 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (selectedStrategy) {
       const savedConfigForStrategy = allStrategyConfigs[selectedStrategy.id] || {};
-      const newDefaultValues: Record<string, string> = {};
+      const initialParamValues: Record<string, string> = {};
 
       selectedStrategy.parameters.forEach(param => {
-        if (param.isConfigurable && savedConfigForStrategy[param.name] !== undefined) {
-          newDefaultValues[param.name] = savedConfigForStrategy[param.name];
+        if (param.name === 'main_input') {
+          // Preserve existing main_input if user was typing, otherwise use saved/default if available (though main_input isn't typically saved/defaulted elsewhere)
+          initialParamValues[param.name] = inputValues[param.name] || savedConfigForStrategy[param.name] || param.defaultValue || '';
+        } else if (param.isConfigurable && savedConfigForStrategy[param.name] !== undefined) {
+          initialParamValues[param.name] = savedConfigForStrategy[param.name];
         } else if (param.defaultValue) {
-          newDefaultValues[param.name] = param.defaultValue;
+          initialParamValues[param.name] = param.defaultValue;
         } else {
-          newDefaultValues[param.name] = '';
+          initialParamValues[param.name] = ''; // Default to empty string for non-main_input params without saved/default values
         }
       });
-      // Ensure main_input is always initialized, potentially from its own default or empty
-      if (newDefaultValues['main_input'] === undefined) {
-         const mainInputParam = selectedStrategy.parameters.find(p => p.name === 'main_input');
-         newDefaultValues['main_input'] = mainInputParam?.defaultValue || '';
-      }
-      setInputValues(newDefaultValues);
+      setInputValues(initialParamValues);
     } else {
-      setInputValues({}); // Clear inputs if no strategy is selected
+      setInputValues({ main_input: inputValues.main_input || '' }); // Clear other params, preserve main_input if user was typing
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStrategy, allStrategyConfigs]);
 
 
@@ -125,7 +124,6 @@ export default function PlaygroundPage() {
 
   const handleStrategyChange = (strategyId: string) => {
     setSelectedStrategyId(strategyId);
-    // Update URL query param without full page reload for better UX
     router.push(`/playground?strategy=${strategyId}`, { scroll: false });
   };
 
@@ -137,6 +135,7 @@ export default function PlaygroundPage() {
     let prompt = selectedStrategy.template;
     selectedStrategy.parameters.forEach(param => {
       const regex = new RegExp(`\\$\\{${param.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
+      // Ensure inputValues[param.name] is used, falling back to empty string if undefined
       prompt = prompt.replace(regex, inputValues[param.name] || '');
     });
     setGeneratedPrompt(prompt);
@@ -157,7 +156,7 @@ export default function PlaygroundPage() {
         description: "The prompt has been copied successfully.",
         duration: 3000,
       });
-      setTimeout(() => setIsCopied(false), 2000); // Reset copied state
+      setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy: ', err);
       toast({
@@ -169,38 +168,7 @@ export default function PlaygroundPage() {
     }
   };
 
-  const renderParameterInput = (param: PromptParameter) => {
-    const value = inputValues[param.name] || '';
-    // Only render non-main_input, configurable parameters here (others handled by main textarea or not shown)
-    if (param.name === 'main_input' || !param.isConfigurable) return null;
-
-    return (
-      <div key={param.name} className="space-y-1.5 mb-4">
-        <Label htmlFor={param.name} className="text-sm font-medium text-foreground">{param.label}</Label>
-        {param.type === 'textarea' ? (
-          <Textarea
-            id={param.name}
-            value={value}
-            onChange={e => handleInputChange(param.name, e.target.value)}
-            placeholder={param.placeholder}
-            rows={param.rows || 3}
-            className="font-mono text-sm bg-input text-foreground border-border focus:ring-primary focus:border-primary"
-          />
-        ) : (
-          <Input
-            id={param.name}
-            type="text"
-            value={value}
-            onChange={e => handleInputChange(param.name, e.target.value)}
-            placeholder={param.placeholder}
-            className="text-sm bg-input text-foreground border-border focus:ring-primary focus:border-primary"
-          />
-        )}
-      </div>
-    );
-  };
-
-  const additionalParameters = selectedStrategy?.parameters.filter(p => p.name !== 'main_input' && p.isConfigurable);
+  // renderParameterInput function is removed as parameters are no longer rendered here
 
   return (
     <main className="px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-8 lg:py-12 text-foreground">
@@ -275,12 +243,7 @@ export default function PlaygroundPage() {
                     {selectedStrategy.description}
                   </AlertDescription>
                 </Alert>
-                {additionalParameters && additionalParameters.length > 0 && (
-                  <div className="pt-4">
-                    <h3 className="text-lg font-medium leading-tight tracking-[-0.015em] mb-2">Configure Strategy Parameters:</h3>
-                    {additionalParameters.map(param => renderParameterInput(param))}
-                  </div>
-                )}
+                {/* Section for rendering additional configurable parameters has been removed */}
               </div>
             )}
           </section>
@@ -294,7 +257,7 @@ export default function PlaygroundPage() {
                     disabled={!generatedPrompt || isCopied}
                     variant="default"
                     size="sm"
-                    className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground" // No absolute positioning here
+                    className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                     <span className="material-icons text-base mr-1.5">content_copy</span>
                     Copy

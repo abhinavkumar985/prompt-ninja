@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
+import useLocalStorage from '@/hooks/useLocalStorage'; // Import useLocalStorage
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -13,19 +15,20 @@ import { CopyButton } from '@/components/CopyButton';
 import { Wand2, Info, FileText } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// metadata can't be dynamically set in client components easily,
-// but we can update the main H1 and descriptive paragraph
-// export const metadata = {
-//   title: 'Playground - PromptNin',
-//   description: 'Interactively generate AI prompts with PromptNin. Select strategies, input your code or parameters, and craft the perfect input for your AI assistant.',
-// };
-
+// Type for stored strategy configurations
+type StrategyConfigurations = Record<string, Record<string, string>>;
 
 export default function PlaygroundPage() {
   const searchParams = useSearchParams();
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+
+  // Load all strategy configurations from local storage
+  const [allStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
+    'promptnin-strategy-configurations',
+    {}
+  );
 
   useEffect(() => {
     const strategyIdFromQuery = searchParams.get('strategy');
@@ -42,18 +45,27 @@ export default function PlaygroundPage() {
 
   useEffect(() => {
     if (selectedStrategy) {
-      const defaultValues: Record<string, string> = {};
+      // Get saved configuration for the current strategy, or an empty object if none
+      const savedConfigForStrategy = allStrategyConfigs[selectedStrategy.id] || {};
+      const newDefaultValues: Record<string, string> = {};
+
       selectedStrategy.parameters.forEach(param => {
-        if (param.defaultValue) {
-          defaultValues[param.name] = param.defaultValue;
+        // Priority:
+        // 1. Value from saved configuration (local storage)
+        // 2. Default value from strategy definition (prompt-strategies.ts)
+        // 3. Empty string
+        if (savedConfigForStrategy[param.name] !== undefined) {
+          newDefaultValues[param.name] = savedConfigForStrategy[param.name];
+        } else if (param.defaultValue) {
+          newDefaultValues[param.name] = param.defaultValue;
         } else {
-           defaultValues[param.name] = '';
+          newDefaultValues[param.name] = '';
         }
       });
-      setInputValues(defaultValues);
-      setGeneratedPrompt(''); // Reset prompt when strategy changes
+      setInputValues(newDefaultValues);
+      setGeneratedPrompt(''); // Reset prompt when strategy or its saved config changes
     }
-  }, [selectedStrategy]);
+  }, [selectedStrategy, allStrategyConfigs]); // Re-run if selectedStrategy or any saved configs change
 
   const handleInputChange = (paramName: string, value: string) => {
     setInputValues(prev => ({ ...prev, [paramName]: value }));
@@ -94,7 +106,6 @@ export default function PlaygroundPage() {
   };
   
   useEffect(() => {
-    // Update document title for client components if needed
     document.title = 'Playground - PromptNin';
   }, []);
 
@@ -111,7 +122,7 @@ export default function PlaygroundPage() {
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Wand2 className="h-6 w-6 text-primary" /> Configure Strategy</CardTitle>
-            <CardDescription>Select a strategy and fill in the parameters to generate your prompt.</CardDescription>
+            <CardDescription>Select a strategy and fill in the parameters to generate your prompt. Saved configurations from Settings will be pre-filled.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
@@ -144,7 +155,7 @@ export default function PlaygroundPage() {
         <div className="lg:col-span-2 space-y-8">
           {selectedStrategy && (
             <Alert variant="default" className="shadow">
-              <Info className="h-5 w-5" />
+              <Info className="h-5 w-5 text-primary" />
               <AlertTitle className="font-semibold">{selectedStrategy.name}</AlertTitle>
               <AlertDescription>
                 {selectedStrategy.description}
@@ -197,3 +208,4 @@ export default function PlaygroundPage() {
     </div>
   );
 }
+

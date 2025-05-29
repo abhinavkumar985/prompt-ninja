@@ -20,9 +20,10 @@ const notoSans = Noto_Sans({
   display: 'swap',
 });
 
+// Metadata can still be exported from client components in the app router
 export const metadata: Metadata = {
   title: 'PromptNin - AI Prompt Engineering Tool',
-  description: 'PromptNin helps developers generate high-quality prompts for AI code assistants using structured techniques. Paste your code and configure strategies to get the perfect prompt.',
+  description: 'PromptNin is a developer tool that helps engineers generate high-quality prompts for AI code assistants (like Copilot, Gemini, etc.) using structured techniques. This also allow user to paste their code and get the complete prompt based on configuration',
 };
 
 export default function RootLayout({
@@ -31,11 +32,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${notoSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${notoSans.variable}`} suppressHydrationWarning={true}>
       <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
       </head>
-      <body className={`min-h-screen flex flex-col antialiased font-sans bg-slate-50`}>
+      <body className={`min-h-screen flex flex-col antialiased font-sans bg-slate-50`} suppressHydrationWarning={true}>
         <MainLayoutClientWrapper>
           <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}

@@ -6,17 +6,16 @@ import { usePathname } from 'next/navigation';
 import { LogoIcon } from '@/components/icons/LogoIcon'; // Using the updated LogoIcon
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Github } from 'lucide-react';
+import { Menu, Github, Settings, Wand2, Handshake } from 'lucide-react'; // Added icons
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
-export const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft";
+export const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft"; // Placeholder, update this
 
 const navItems = [
-  { href: '/playground', label: 'Playground' },
-  { href: '/strategy-library', label: 'Library' },
-  { href: '/contribution-guide', label: 'Contribute' },
-  { href: '/settings', label: 'Settings' }, // Keeping settings as it's a core app feature
+  { href: '/playground', label: 'Playground', icon: Wand2 },
+  { href: '/contribution-guide', label: 'Contribute', icon: Handshake, highlight: true },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const GithubIconSvg = () => ( // SVG from mockup
@@ -31,26 +30,32 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-border bg-background/80 px-6 py-4 backdrop-blur-md sm:px-10">
-      <Link href="/" className="flex items-center gap-3 text-white">
-        <div className="size-6 text-primary"> {/* text-primary for #dce8f3 */}
-          <LogoIcon /> {/* Using the same logo as contribution page */}
+      <Link href="/" className="flex items-center gap-3">
+        <div className="size-6 text-primary">
+          <LogoIcon />
         </div>
-        <h2 className="text-xl font-bold leading-tight tracking-[-0.015em] text-primary">PromptNin</h2>
+        <h2 className="text-xl font-bold leading-tight tracking-[-0.015em] text-foreground">PromptNin</h2>
       </Link>
 
       <div className="flex items-center gap-4 sm:gap-6">
-        <nav className="hidden items-center gap-6 text-sm font-medium sm:flex">
+        <nav className="hidden items-center gap-4 text-sm font-medium sm:flex">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "transition-colors",
-                  isActive ? "text-primary font-semibold" : "text-secondary-foreground hover:text-primary"
+                  "flex items-center gap-2 px-3 py-2 rounded-md transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground font-semibold"
+                    : item.highlight
+                    ? "bg-accent text-accent-foreground hover:bg-accent/80"
+                    : "text-secondary-foreground hover:text-primary hover:bg-accent/20"
                 )}
               >
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
@@ -69,7 +74,7 @@ export function Header() {
 
         <div className="relative h-9 w-9">
           <Image
-            src="https://placehold.co/36x36.png" // Placeholder avatar
+            src="https://placehold.co/36x36.png"
             alt="User avatar"
             layout="fill"
             objectFit="cover"
@@ -87,7 +92,7 @@ export function Header() {
                 <span className="sr-only">Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="bg-background border-border w-[250px]">
+            <SheetContent side="right" className="bg-card border-border w-[250px]">
               <nav className="grid gap-4 py-6">
                 <Link href="/" className="flex items-center gap-3 text-primary mb-4 px-3">
                   <div className="size-6">
@@ -97,15 +102,21 @@ export function Header() {
                 </Link>
                 {navItems.map((item) => {
                   const isActive = pathname === item.href;
+                  const Icon = item.icon;
                   return (
                     <Link
                       key={item.label}
                       href={item.href}
                       className={cn(
                         "flex items-center space-x-2 rounded-md px-3 py-2 text-base font-medium transition-colors",
-                        isActive ? "bg-primary/10 text-primary font-semibold" : "text-secondary-foreground hover:bg-secondary/80 hover:text-primary"
+                        isActive
+                          ? "bg-primary text-primary-foreground font-semibold"
+                          : item.highlight
+                          ? "bg-accent text-accent-foreground"
+                          : "text-secondary-foreground hover:bg-secondary/80 hover:text-primary"
                       )}
                     >
+                      <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
                     </Link>
                   );

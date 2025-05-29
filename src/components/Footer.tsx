@@ -1,13 +1,12 @@
 
 import Link from 'next/link';
-import { GITHUB_REPO_URL } from './Header'; // Assuming GITHUB_REPO_URL is exported from Header
+import { GITHUB_REPO_URL } from './Header';
 
 const footerNavItems = [
   { href: '/playground', label: 'Playground' },
-  { href: '/strategy-library', label: 'Library' },
   { href: '/contribution-guide', label: 'Contribute' },
   { href: GITHUB_REPO_URL, label: 'GitHub', target: '_blank' },
-  { href: '#', label: 'X (Twitter)', target: '_blank' }, // Placeholder for Twitter
+  { href: '#', label: 'X (Twitter)', target: '_blank' }, // Placeholder for Twitter, you can update this URL
 ];
 
 export function Footer() {
@@ -28,7 +27,7 @@ export function Footer() {
             </Link>
           ))}
         </div>
-        <p className="text-sm text-muted-foreground-darker"> {/* Using the darker muted foreground */}
+        <p className="text-sm text-muted-foreground-darker">
           &copy; {currentYear} PromptNin. All rights reserved.
         </p>
       </div>

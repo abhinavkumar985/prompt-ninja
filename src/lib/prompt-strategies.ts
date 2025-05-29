@@ -2,24 +2,20 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   User,
-  FileText,
-  ListChecks, // Few-shot
-  ListOrdered, // Step-by-step
+  ListChecks, // For Few-shot if we re-add, or a general "examples" icon
+  ListOrdered, // Step-by-step, also good for Iterative Chaining
   Bug,
-  LayoutGrid, // Placeholder, consider replacing if a better fit is found
+  Wrench, // Feature Blueprinting
   GitCompareArrows,
   BrainCircuit,
-  MessageCircleQuestion,
-  Anchor, // Constraint Anchoring placeholder
-  Wrench, // Feature Blueprinting
-  Workflow, // Iterative Chaining (could also be ListOrdered)
+  HelpingHand, // Rubber Ducking
   Filter, // Constraint Anchoring
-  BookCopy, // Explicit Context Setup
-  Lightbulb, // Generate Knowledge
-  DatabaseZap, // Retrieval-Augmented Generation
-  Repeat, // Iterative Refinement
-  Users, // Ensemble Methods
-  HelpingHand // Rubber Ducking (alternative to MessageCircleQuestion)
+  BookCopy, // Explicit Context Setup (if re-added)
+  Workflow, // Iterative Chaining (if re-added)
+  Lightbulb, // Generate Knowledge (general idea icon)
+  DatabaseZap, // Retrieval-Augmented Generation (general idea icon)
+  Repeat, // Iterative Refinement (general idea icon)
+  Users, // Ensemble Methods (general idea icon)
 } from 'lucide-react';
 
 export interface PromptParameter {
@@ -50,10 +46,10 @@ export interface PromptStrategy {
 }
 
 // Helper function to extract parameters from a template string
-const extractParameters = (template: string): Omit<PromptParameter, 'isConfigurable'>[] => {
+const extractParameters = (template: string): Omit<PromptParameter, 'isConfigurable' | 'defaultValue'>[] => {
   const regex = /\$\{(\w+)\}/g;
   let match;
-  const params: Omit<PromptParameter, 'isConfigurable'>[] = [];
+  const params: Omit<PromptParameter, 'isConfigurable' | 'defaultValue'>[] = [];
   const seenParams = new Set<string>();
 
   while ((match = regex.exec(template)) !== null) {
@@ -61,7 +57,7 @@ const extractParameters = (template: string): Omit<PromptParameter, 'isConfigura
     if (!seenParams.has(paramName)) {
       const label = paramName.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       const textareaKeywords = ['code', 'summary', 'description', 'bullets', 'explanation', 'input', 'instruction', 'requirements', 'template', 'json', 'text', 'context', 'error', 'output', 'goal', 'example', 'content', 'snippet', 'refactor', 'style', 'strategy', 'notes', 'function', 'behavior', 'feature', 'history', 'query', 'criteria', 'response', 'task', 'log', 'issue', 'script', 'detail', 'problem', 'solution', 'payload', 'data', 'config', 'report', 'message', 'comment', 'feedback', 'request', 'test', 'scenario', 'guideline', 'prompt'];
-      const isTextarea = textareaKeywords.some(keyword => paramName.toLowerCase().includes(keyword)) || paramName.toLowerCase().endsWith('s') || paramName.toLowerCase().includes('list');
+      const isTextarea = textareaKeywords.some(keyword => paramName.toLowerCase().includes(keyword)) || paramName.toLowerCase().endsWith('s') || paramName.toLowerCase().includes('list') || paramName.toLowerCase().includes('text');
 
       params.push({
         name: paramName,
@@ -82,11 +78,15 @@ const generateExample = (template: string, parameters: PromptParameter[]): { inp
   let output = template;
 
   parameters.forEach(param => {
-    const exampleValue = param.type === 'textarea'
-      ? `Example multi-line content for ${param.label.toLowerCase()}.\nFor instance, if this is code:\nfunction hello() {\n  console.log("Hello, World!");\n}`
-      : `example_${param.name.replace(/\s+/g, '_').toLowerCase()}`;
+    let exampleValue = param.defaultValue || `example_${param.name.replace(/\s+/g, '_').toLowerCase()}`;
+    if (param.type === 'textarea' && !param.defaultValue) {
+      exampleValue = `Example multi-line content for ${param.label.toLowerCase()}.\nFor instance, if this is code:\nfunction hello() {\n  console.log("Hello, World!");\n}`;
+    } else if (!param.defaultValue && param.options && param.options.length > 0) {
+      exampleValue = param.options[0];
+    }
+    
     inputs[param.name] = exampleValue;
-    const regex = new RegExp(`\\$\\{${param.name}\\}`, 'g');
+    const regex = new RegExp(`\\$\\{${param.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
     output = output.replace(regex, exampleValue);
   });
 
@@ -96,13 +96,14 @@ const generateExample = (template: string, parameters: PromptParameter[]): { inp
 interface StrategyInputItem {
   jsonId: number;
   name: string;
-  templateFromUser: string; // "description" from user JSON
-  purpose: string; // "purpose" from user JSON
-  shortDescription: string; // Added for cards
+  templateFromUser: string; // "description" from user JSON in previous context
+  purpose: string; // "purpose" from user JSON in previous context
+  shortDescription: string;
   icon: LucideIcon;
   category: string;
   imagePlaceholderKeywords: string;
-  configurableParameterNames?: string[]; // New: lists params configurable on Settings page
+  configurableParameterNames?: string[];
+  parameterDefaults?: Record<string, string>; // For setting defaultValues for specific params
 }
 
 const strategiesInput: StrategyInputItem[] = [
@@ -115,41 +116,45 @@ const strategiesInput: StrategyInputItem[] = [
     icon: User,
     category: "Persona",
     imagePlaceholderKeywords: "expert persona",
-    configurableParameterNames: ["language", "goal"]
+    configurableParameterNames: ["language", "goal"],
+    parameterDefaults: { language: "TypeScript", goal: "clarity and potential bugs" }
   },
-  {
-    jsonId: 2,
-    name: "Explicit Context Setup",
-    templateFromUser: "Here's the problem: {summary}. The code is below: {code_snippet}. It should do {expected_behavior}, but instead it's doing {factual_behavior}. Why?",
-    purpose: "Frame the problem clearly to avoid generic, surface-level responses.",
-    shortDescription: "Clearly define problem context for targeted fixes.",
-    icon: BookCopy,
-    category: "Problem Framing",
-    imagePlaceholderKeywords: "clear context",
-    configurableParameterNames: ["expected_behavior", "factual_behavior"]
-  },
-  {
-    jsonId: 3,
-    name: "Input/Output Examples (Few-shot)",
-    templateFromUser: "Task: {task_description}\nExample 1:\nInput: {example_input_1}\nOutput: {example_output_1}\n\nExample 2:\nInput: {example_input_2}\nOutput: {example_output_2}\n\nNow, for the following input, provide the output:\nInput: {actual_input}\nOutput:",
-    purpose: "Guide the assistant by showing intent through a few examples (few-shot learning).",
-    shortDescription: "Provide input-output examples to guide AI.",
-    icon: ListChecks,
-    category: "Guidance",
-    imagePlaceholderKeywords: "example driven",
-    configurableParameterNames: []
-  },
-  {
-    jsonId: 4,
-    name: "Iterative Chaining",
-    templateFromUser: "First, {initial_task}. (AI provides output for step 1) \nNext, based on the previous output, {second_task}. (AI provides output for step 2)\nThen, {third_task}.",
-    purpose: "Break larger tasks into steps to avoid overwhelming or vague prompts.",
-    shortDescription: "Break tasks into smaller, manageable steps.",
-    icon: Workflow,
-    category: "Decomposition",
-    imagePlaceholderKeywords: "stepwise process",
-    configurableParameterNames: []
-  },
+  // { // Removed 2nd strategy: Explicit Context Setup
+  //   jsonId: 2,
+  //   name: "Explicit Context Setup",
+  //   templateFromUser: "Here's the problem: {summary}. The code is below: {code_snippet}. It should do {expected_behavior}, but instead it's doing {factual_behavior}. Why?",
+  //   purpose: "Frame the problem clearly to avoid generic, surface-level responses.",
+  //   shortDescription: "Clearly define problem context for targeted fixes.",
+  //   icon: BookCopy,
+  //   category: "Problem Framing",
+  //   imagePlaceholderKeywords: "clear context",
+  //   configurableParameterNames: ["expected_behavior", "factual_behavior"],
+  //   parameterDefaults: { expected_behavior: "return the sum of two numbers", factual_behavior: "returning NaN" }
+  // },
+  // { // Removed 3rd strategy: Input/Output Examples (Few-shot)
+  //   jsonId: 3,
+  //   name: "Input/Output Examples (Few-shot)",
+  //   templateFromUser: "Task: {task_description}\nExample 1:\nInput: {example_input_1}\nOutput: {example_output_1}\n\nExample 2:\nInput: {example_input_2}\nOutput: {example_output_2}\n\nNow, for the following input, provide the output:\nInput: {actual_input}\nOutput:",
+  //   purpose: "Guide the assistant by showing intent through a few examples (few-shot learning).",
+  //   shortDescription: "Provide input-output examples to guide AI.",
+  //   icon: ListChecks,
+  //   category: "Guidance",
+  //   imagePlaceholderKeywords: "example driven",
+  //   configurableParameterNames: [],
+  //   parameterDefaults: { task_description: "Translate English to French."}
+  // },
+  // { // Removed 4th strategy: Iterative Chaining
+  //   jsonId: 4,
+  //   name: "Iterative Chaining",
+  //   templateFromUser: "First, {initial_task}. (AI provides output for step 1) \nNext, based on the previous output, {second_task}. (AI provides output for step 2)\nThen, {third_task}.",
+  //   purpose: "Break larger tasks into steps to avoid overwhelming or vague prompts.",
+  //   shortDescription: "Break tasks into smaller, manageable steps.",
+  //   icon: Workflow,
+  //   category: "Decomposition",
+  //   imagePlaceholderKeywords: "stepwise process",
+  //   configurableParameterNames: [],
+  //   parameterDefaults: { initial_task: "Outline the main sections of a README file."}
+  // },
   {
     jsonId: 5,
     name: "Debug with Simulation",
@@ -159,7 +164,8 @@ const strategiesInput: StrategyInputItem[] = [
     icon: Bug,
     category: "Debugging",
     imagePlaceholderKeywords: "bug hunt",
-    configurableParameterNames: ["expected_result"]
+    configurableParameterNames: ["expected_result"],
+    parameterDefaults: { expected_result: "true" }
   },
   {
     jsonId: 6,
@@ -170,7 +176,8 @@ const strategiesInput: StrategyInputItem[] = [
     icon: Wrench,
     category: "Scaffolding",
     imagePlaceholderKeywords: "project scaffold",
-    configurableParameterNames: ["tech_stack"]
+    configurableParameterNames: ["tech_stack"],
+    parameterDefaults: { feature_name: "a user authentication flow", tech_stack: "Next.js, TypeScript, and Tailwind CSS" }
   },
   {
     jsonId: 7,
@@ -181,7 +188,8 @@ const strategiesInput: StrategyInputItem[] = [
     icon: GitCompareArrows,
     category: "Refactoring",
     imagePlaceholderKeywords: "code optimize",
-    configurableParameterNames: ["goal_eg_readability_performance", "techniques_eg_SOLID_principles"]
+    configurableParameterNames: ["goal_eg_readability_performance", "techniques_eg_SOLID_principles"],
+    parameterDefaults: { goal_eg_readability_performance: "readability and maintainability", techniques_eg_SOLID_principles: "SOLID principles" }
   },
   {
     jsonId: 8,
@@ -192,7 +200,8 @@ const strategiesInput: StrategyInputItem[] = [
     icon: BrainCircuit,
     category: "Exploration",
     imagePlaceholderKeywords: "solution options",
-    configurableParameterNames: ["style_1_eg_functional", "style_2_eg_recursive"]
+    configurableParameterNames: ["style_1_eg_functional", "style_2_eg_recursive"],
+    parameterDefaults: { style_1_eg_functional: "functional programming", style_2_eg_recursive: "recursive" }
   },
   {
     jsonId: 9,
@@ -203,7 +212,8 @@ const strategiesInput: StrategyInputItem[] = [
     icon: HelpingHand,
     category: "Validation",
     imagePlaceholderKeywords: "logic check",
-    configurableParameterNames: []
+    configurableParameterNames: [],
+    parameterDefaults: {}
   },
   {
     jsonId: 10,
@@ -211,22 +221,23 @@ const strategiesInput: StrategyInputItem[] = [
     templateFromUser: "Generate code for {task_description}. Constraints: use {specific_libraries_versions}, avoid {disallowed_patterns}, optimize for {optimization_goal_eg_memory}. Target environment: {environment_details}. Existing code context: {existing_code_context}",
     purpose: "Prevent the AI from overreaching or introducing incompatible patterns.",
     shortDescription: "Set specific constraints to guide AI output.",
-    icon: Filter, // Using Filter as a more direct match for constraints
+    icon: Filter,
     category: "Constraints",
     imagePlaceholderKeywords: "guideline focus",
-    configurableParameterNames: ["specific_libraries_versions", "disallowed_patterns", "optimization_goal_eg_memory", "environment_details"]
+    configurableParameterNames: ["specific_libraries_versions", "disallowed_patterns", "optimization_goal_eg_memory", "environment_details"],
+    parameterDefaults: { optimization_goal_eg_memory: "memory usage", environment_details: "a web browser" }
   }
 ];
 
 export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
+  // Convert {param} to ${param} for template
   const template = item.templateFromUser.replace(/\{(\w+)\}/g, (match, p1) => `\${${p1}}`);
   
   const extractedParams = extractParameters(template);
   const parameters: PromptParameter[] = extractedParams.map(p => ({
     ...p,
     isConfigurable: item.configurableParameterNames?.includes(p.name) ?? false,
-    // Ensure defaultValue is preserved if any was part of original strategy definition (not applicable here as we derive from template)
-    defaultValue: p.defaultValue || '' 
+    defaultValue: item.parameterDefaults?.[p.name] || '',
   }));
 
   const example = generateExample(template, parameters);

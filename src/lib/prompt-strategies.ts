@@ -4,6 +4,7 @@ import {
   User, // For Role Prompting
   MessageSquareText, // For Explain Code
   Wrench, // For Refactor Code
+  Repeat, // For Convert Code
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -144,6 +145,21 @@ const strategiesInput: StrategyInputItem[] = [
       { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., Java, Rust" },
       { name: "goal", label: "Refactor Goal", type: "text", placeholder: "e.g., simplify logic, improve structure" }
     ]
+  },
+  {
+    name: "Convert Code",
+    templateString: "Convert this code from ${source_lang} to ${target_lang}:\n\n${main_input}",
+    description: "Translate code between programming languages by specifying the source and target languages.",
+    shortDescription: "Translate code between languages.",
+    icon: Repeat,
+    category: "Migration",
+    imagePlaceholderKeywords: "code translation",
+    configurableParameterNames: ["source_lang", "target_lang"],
+    parameterDefaults: { source_lang: "JavaScript", target_lang: "Python" },
+    additionalParameters: [
+      { name: "source_lang", label: "Source Language", type: "text", placeholder: "e.g., JavaScript" },
+      { name: "target_lang", label: "Target Language", type: "text", placeholder: "e.g., Python" }
+    ]
   }
 ];
 
@@ -191,4 +207,3 @@ export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
     imagePlaceholderKeywords: item.imagePlaceholderKeywords,
   };
 });
-

@@ -14,22 +14,58 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Save, SlidersHorizontal, Settings2, RotateCcw, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
+type StrategyUsageData = {
+  [strategyId: string]: {
+    count: number;
+    lastUsed: number; // timestamp
+  };
+};
+
 export default function SettingsPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams(); // For reading query params
+
   const [allStrategyConfigs, setAllStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
     'promptnin-strategy-configurations',
     {}
   );
 
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(
-    PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null
+  const [strategyUsage] = useLocalStorage<StrategyUsageData>(
+    'promptnin-strategy-usage',
+    {}
   );
+
+  const sortedStrategies = useMemo(() => {
+    return [...PROMPT_STRATEGIES].sort((a, b) => {
+      const usageA = strategyUsage[a.id];
+      const usageB = strategyUsage[b.id];
+
+      const lastUsedA = usageA?.lastUsed || 0;
+      const lastUsedB = usageB?.lastUsed || 0;
+
+      if (lastUsedA !== lastUsedB) {
+        return lastUsedB - lastUsedA; // Sort by most recent first
+      }
+      return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b);
+    });
+  }, [strategyUsage]);
+
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    const strategyIdFromQuery = searchParams.get('strategy');
+    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
+      return strategyIdFromQuery;
+    }
+    return sortedStrategies.length > 0 ? sortedStrategies[0].id : null;
+  });
+  
   const [currentFormValues, setCurrentFormValues] = useState<Record<string, string>>({});
 
   const selectedStrategy = useMemo(() => {
+    // Find from original PROMPT_STRATEGIES to ensure correct object reference
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
@@ -51,6 +87,18 @@ export default function SettingsPage() {
   useEffect(() => {
     document.title = 'Strategy Defaults - PromptNin';
   }, []);
+
+  // Effect to update selectedStrategyId if query param changes
+  useEffect(() => {
+    const strategyIdFromQuery = searchParams.get('strategy');
+    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
+      if (selectedStrategyId !== strategyIdFromQuery) {
+        setSelectedStrategyId(strategyIdFromQuery);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, sortedStrategies]);
+
 
   const handleInputChange = (paramName: string, value: string) => {
     setCurrentFormValues(prev => ({ ...prev, [paramName]: value }));
@@ -129,113 +177,116 @@ export default function SettingsPage() {
   const configurableParameters = selectedStrategy?.parameters.filter(p => p.isConfigurable) || [];
 
   return (
-    <div className="space-y-8 text-foreground">
-      <section className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground flex items-center justify-center gap-3">
-          <SlidersHorizontal className="h-8 w-8 text-primary" /> Strategy Default Inputs
-        </h1>
-        <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Configure default input values for your prompt strategies. These defaults will pre-fill the fields in the Playground.
-        </p>
-      </section>
+    <main className="px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-8 lg:py-12">
+      <div className="layout-content-container flex flex-col gap-8 max-w-6xl w-full">
+        <section className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground flex items-center justify-center gap-3">
+            <SlidersHorizontal className="h-8 w-8 text-primary" /> Strategy Default Inputs
+          </h1>
+          <p className="mt-3 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Configure default input values for your prompt strategies. These defaults will pre-fill the fields in the Playground.
+          </p>
+        </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        <Card className="md:col-span-1 shadow-xl bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-card-foreground"><Settings2 className="h-5 w-5 text-primary"/> Select Strategy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[calc(100vh-20rem)] pr-3"> {/* Ensure scrollbar track is visible on dark theme */}
-              <div className="space-y-2">
-                {PROMPT_STRATEGIES.map(strategy => (
-                  <Button
-                    key={strategy.id}
-                    variant="ghost"
-                    onClick={() => setSelectedStrategyId(strategy.id)}
-                    className={cn(
-                      "w-full justify-start text-left h-auto py-2 px-3 text-card-foreground hover:bg-secondary/80 hover:text-accent",
-                      selectedStrategyId === strategy.id ? "bg-primary text-primary-foreground" : ""
-                    )}
-                  >
-                    {strategy.icon && <strategy.icon className="mr-2 h-4 w-4" />}
-                    {strategy.name}
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2 shadow-xl bg-card border-border">
-          {selectedStrategy ? (
-            <>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-card-foreground">
-                  {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary"/>}
-                  {selectedStrategy.name}
-                </CardTitle>
-                <CardDescription className="pt-1 text-muted-foreground">{selectedStrategy.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div> 
-                  <h3 className="text-lg font-semibold mb-3 text-card-foreground">Default Inputs Configuration</h3>
-                  {configurableParameters.length > 0 ? (
-                    configurableParameters.map(param => (
-                      <div key={param.name} className="space-y-1.5 mb-4">
-                        <Label htmlFor={param.name} className="text-sm font-medium text-card-foreground">{param.label}</Label>
-                        {renderParameterInput(param)}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
-                  )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          <Card className="md:col-span-1 shadow-xl bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-card-foreground"><Settings2 className="h-5 w-5 text-primary"/> Select Strategy</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[calc(100vh-26rem)] pr-3">
+                <div className="space-y-2">
+                  {sortedStrategies.map(strategy => (
+                    <Button
+                      key={strategy.id}
+                      variant="ghost"
+                      onClick={() => setSelectedStrategyId(strategy.id)}
+                      className={cn(
+                        "w-full justify-start text-left h-auto py-2 px-3 text-card-foreground hover:bg-secondary/80 hover:text-accent",
+                        selectedStrategyId === strategy.id ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""
+                      )}
+                    >
+                      {strategy.icon && <strategy.icon className="mr-2 h-4 w-4" />}
+                      {strategy.name}
+                    </Button>
+                  ))}
                 </div>
-                
-                {configurableParameters.length > 0 && (
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border mt-4">
-                    <Button onClick={handleSaveConfiguration} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
-                      <Save className="mr-2 h-4 w-4" /> Save Configuration
-                    </Button>
-                    <Button onClick={handleResetToDefaults} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
-                      <RotateCcw className="mr-2 h-4 w-4" /> Reset to Strategy Defaults
-                    </Button>
-                  </div>
-                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
 
-                {selectedStrategy.example && (
-                  <div className="pt-6 mt-6 border-t border-border">
-                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-card-foreground">
-                      <Info className="h-5 w-5 text-primary"/> Example Usage
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">An example of how this strategy can be used.</p>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Inputs:</h4>
-                        <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
-                          {JSON.stringify(selectedStrategy.example.inputs, null, 2)}
-                        </pre>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Output Prompt:</h4>
-                        <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
-                          {selectedStrategy.example.output}
-                        </pre>
+          <Card className="md:col-span-2 shadow-xl bg-card border-border">
+            {selectedStrategy ? (
+              <>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-card-foreground">
+                    {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary"/>}
+                    {selectedStrategy.name}
+                  </CardTitle>
+                  <CardDescription className="pt-1 text-muted-foreground">{selectedStrategy.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div> 
+                    <h3 className="text-lg font-semibold mb-3 text-card-foreground">Default Inputs Configuration</h3>
+                    {configurableParameters.length > 0 ? (
+                      configurableParameters.map(param => (
+                        <div key={param.name} className="space-y-1.5 mb-4">
+                          <Label htmlFor={param.name} className="text-sm font-medium text-card-foreground">{param.label}</Label>
+                          {renderParameterInput(param)}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
+                    )}
+                  </div>
+                  
+                  {configurableParameters.length > 0 && (
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border mt-4">
+                      <Button onClick={handleSaveConfiguration} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <Save className="mr-2 h-4 w-4" /> Save Configuration
+                      </Button>
+                      <Button onClick={handleResetToDefaults} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary/10">
+                        <RotateCcw className="mr-2 h-4 w-4" /> Reset to Strategy Defaults
+                      </Button>
+                    </div>
+                  )}
+
+                  {selectedStrategy.example && (
+                    <div className="pt-6 mt-6 border-t border-border">
+                      <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-card-foreground">
+                        <Info className="h-5 w-5 text-primary"/> Example Usage
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">An example of how this strategy can be used.</p>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Inputs:</h4>
+                          <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
+                            {JSON.stringify(selectedStrategy.example.inputs, null, 2)}
+                          </pre>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm mb-1 text-card-foreground">Example Output Prompt:</h4>
+                          <pre className="p-3 bg-input/50 rounded-md text-xs font-mono overflow-x-auto text-muted-foreground border border-border">
+                            {selectedStrategy.example.output}
+                          </pre>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </>
-          ) : (
-             <CardHeader>
-              <CardTitle className="text-card-foreground">No Strategy Selected</CardTitle>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs and view its details.</p>
-              </CardContent>
-            </CardHeader>
-          )}
-        </Card>
+                  )}
+                </CardContent>
+              </>
+            ) : (
+               <CardHeader>
+                <CardTitle className="text-card-foreground">No Strategy Selected</CardTitle>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs and view its details.</p>
+                </CardContent>
+              </CardHeader>
+            )}
+          </Card>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
+

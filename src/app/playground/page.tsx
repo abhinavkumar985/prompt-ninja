@@ -3,10 +3,9 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
+import { PROMPT_STRATEGIES, PromptStrategy } from '@/lib/prompt-strategies';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { Label } from '@/components/ui/label';
-// Input component is no longer needed as only Textarea is used for direct input here
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { LucideIcon } from 'lucide-react';
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
+
+type StrategyUsageData = {
+  [strategyId: string]: {
+    count: number;
+    lastUsed: number; // timestamp
+  };
+};
 
 // Helper function to generate highlighted example prompt for tooltips
 function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.ReactNode {
@@ -37,9 +43,14 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
   if (regexParts.length === 0 && !output) {
     return "No example available or no configurable parameters to highlight.";
   }
-  if (regexParts.length === 0) {
+  
+  if (regexParts.length === 0 && output) { // check output before returning it raw
     return output;
   }
+  if (regexParts.length === 0) { // if still no regexParts and no output (covered above)
+      return "No example available or no configurable parameters to highlight.";
+  }
+
 
   const regex = new RegExp(`(${regexParts.join('|')})`, 'g');
   let match;
@@ -67,22 +78,45 @@ export default function PlaygroundPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const [isCopied, setIsCopied] = useState(false);
 
   const [allStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
     'promptnin-strategy-configurations',
     {}
   );
 
+  const [strategyUsage, setStrategyUsage] = useLocalStorage<StrategyUsageData>(
+    'promptnin-strategy-usage',
+    {}
+  );
+
+  const sortedStrategies = useMemo(() => {
+    return [...PROMPT_STRATEGIES].sort((a, b) => {
+      const usageA = strategyUsage[a.id];
+      const usageB = strategyUsage[b.id];
+
+      const lastUsedA = usageA?.lastUsed || 0;
+      const lastUsedB = usageB?.lastUsed || 0;
+
+      if (lastUsedA !== lastUsedB) {
+        return lastUsedB - lastUsedA; // Sort by most recent first
+      }
+      // Optional: secondary sort by count or original order if lastUsed is same (e.g., both unused)
+      // For now, if lastUsed is same, maintain original relative order (implicit in stable sort or by index)
+      return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b);
+    });
+  }, [strategyUsage]);
+
+
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
     const strategyIdFromQuery = searchParams.get('strategy');
-    if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
+    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
       return strategyIdFromQuery;
     }
-    return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
+    return sortedStrategies.length > 0 ? sortedStrategies[0].id : null;
   });
 
   const selectedStrategy = useMemo(() => {
+    // Find from the original PROMPT_STRATEGIES to ensure we get the correct object reference if needed elsewhere
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
@@ -100,19 +134,18 @@ export default function PlaygroundPage() {
 
       selectedStrategy.parameters.forEach(param => {
         if (param.name === 'main_input') {
-          // Preserve existing main_input if user was typing, otherwise use saved/default if available (though main_input isn't typically saved/defaulted elsewhere)
           initialParamValues[param.name] = inputValues[param.name] || savedConfigForStrategy[param.name] || param.defaultValue || '';
         } else if (param.isConfigurable && savedConfigForStrategy[param.name] !== undefined) {
           initialParamValues[param.name] = savedConfigForStrategy[param.name];
         } else if (param.defaultValue) {
           initialParamValues[param.name] = param.defaultValue;
         } else {
-          initialParamValues[param.name] = ''; // Default to empty string for non-main_input params without saved/default values
+          initialParamValues[param.name] = '';
         }
       });
       setInputValues(initialParamValues);
     } else {
-      setInputValues({ main_input: inputValues.main_input || '' }); // Clear other params, preserve main_input if user was typing
+      setInputValues({ main_input: inputValues.main_input || '' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStrategy, allStrategyConfigs]);
@@ -125,6 +158,18 @@ export default function PlaygroundPage() {
   const handleStrategyChange = (strategyId: string) => {
     setSelectedStrategyId(strategyId);
     router.push(`/playground?strategy=${strategyId}`, { scroll: false });
+
+    // Update usage stats
+    setStrategyUsage(prevUsage => {
+      const currentStrategyUsage = prevUsage[strategyId] || { count: 0, lastUsed: 0 };
+      return {
+        ...prevUsage,
+        [strategyId]: {
+          count: currentStrategyUsage.count + 1,
+          lastUsed: Date.now(),
+        },
+      };
+    });
   };
 
   const generatePromptCallback = useCallback(() => {
@@ -135,7 +180,6 @@ export default function PlaygroundPage() {
     let prompt = selectedStrategy.template;
     selectedStrategy.parameters.forEach(param => {
       const regex = new RegExp(`\\$\\{${param.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g');
-      // Ensure inputValues[param.name] is used, falling back to empty string if undefined
       prompt = prompt.replace(regex, inputValues[param.name] || '');
     });
     setGeneratedPrompt(prompt);
@@ -150,13 +194,11 @@ export default function PlaygroundPage() {
     if (!generatedPrompt) return;
     try {
       await navigator.clipboard.writeText(generatedPrompt);
-      setIsCopied(true);
       toast({
         title: "Copied to clipboard!",
         description: "The prompt has been copied successfully.",
         duration: 3000,
       });
-      setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy: ', err);
       toast({
@@ -167,8 +209,6 @@ export default function PlaygroundPage() {
       });
     }
   };
-
-  // renderParameterInput function is removed as parameters are no longer rendered here
 
   return (
     <main className="px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-8 lg:py-12 text-foreground">
@@ -193,7 +233,7 @@ export default function PlaygroundPage() {
             <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em] pt-4">Select a technique</h3>
             <TooltipProvider delayDuration={300}>
               <div className="flex flex-wrap gap-3">
-                {PROMPT_STRATEGIES.map(strategy => (
+                {sortedStrategies.map(strategy => (
                   <Tooltip key={strategy.id}>
                     <TooltipTrigger asChild>
                       <label
@@ -243,7 +283,6 @@ export default function PlaygroundPage() {
                     {selectedStrategy.description}
                   </AlertDescription>
                 </Alert>
-                {/* Section for rendering additional configurable parameters has been removed */}
               </div>
             )}
           </section>
@@ -254,7 +293,7 @@ export default function PlaygroundPage() {
                 <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
                 <Button
                     onClick={handleCopyPrompt}
-                    disabled={!generatedPrompt || isCopied}
+                    disabled={!generatedPrompt}
                     variant="default"
                     size="sm"
                     className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -272,3 +311,4 @@ export default function PlaygroundPage() {
     </main>
   );
 }
+

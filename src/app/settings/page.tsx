@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { PROMPT_STRATEGIES, PromptStrategy, PromptParameter } from '@/lib/prompt-strategies';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Save, SlidersHorizontal, Settings2, RotateCcw, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation'; 
+import { useSearchParams } from 'next/navigation';
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -25,9 +25,9 @@ type StrategyUsageData = {
   };
 };
 
-export default function SettingsPage() {
+function SettingsPage() {
   const { toast } = useToast();
-  const searchParams = useSearchParams(); 
+  const searchParams = useSearchParams();
 
   const [allStrategyConfigs, setAllStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
     'promptnin-strategy-configurations',
@@ -41,7 +41,7 @@ export default function SettingsPage() {
 
   // Initialize with default order. Client-side effect will sort it.
   const [sortedStrategies, setSortedStrategies] = useState<PromptStrategy[]>([...PROMPT_STRATEGIES]);
-  
+
   // Initialize selectedStrategyId. Client-side effect will refine it.
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
     const strategyIdFromQuery = searchParams.get('strategy');
@@ -65,7 +65,7 @@ export default function SettingsPage() {
       return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b);
     });
     setSortedStrategies(clientSorted);
-    
+
     const strategyIdFromQuery = searchParams.get('strategy');
     let newSelectedId = selectedStrategyId;
 
@@ -80,9 +80,9 @@ export default function SettingsPage() {
     }
 
     if (newSelectedId !== selectedStrategyId) {
-        setSelectedStrategyId(newSelectedId);
+      setSelectedStrategyId(newSelectedId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array: runs only once on client mount
 
 
@@ -152,11 +152,11 @@ export default function SettingsPage() {
       if (param.isConfigurable) {
         const val = param.defaultValue ?? '';
         defaultValues[param.name] = val;
-        configToSaveForReset[param.name] = val; 
+        configToSaveForReset[param.name] = val;
       }
     });
     setCurrentFormValues(defaultValues);
-    
+
     setAllStrategyConfigs(prev => ({
       ...prev,
       [selectedStrategy.id]: configToSaveForReset,
@@ -169,10 +169,10 @@ export default function SettingsPage() {
   };
 
   const renderParameterInput = (param: PromptParameter) => {
-    const value = currentFormValues[param.name] ?? ''; 
+    const value = currentFormValues[param.name] ?? '';
     switch (param.type) {
       case 'textarea':
-        return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm bg-input text-foreground"/>;
+        return <Textarea id={param.name} value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} rows={param.rows || 3} className="font-mono text-sm bg-input text-foreground" />;
       case 'select':
         return (
           <Select value={value} onValueChange={val => handleInputChange(param.name, val)}>
@@ -188,7 +188,7 @@ export default function SettingsPage() {
         );
       case 'text':
       default:
-        return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm bg-input text-foreground"/>;
+        return <Input id={param.name} type="text" value={value} onChange={e => handleInputChange(param.name, e.target.value)} placeholder={param.placeholder} className="text-sm bg-input text-foreground" />;
     }
   };
 
@@ -209,7 +209,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           <Card className="md:col-span-1 shadow-xl bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-card-foreground"><Settings2 className="h-5 w-5 text-primary"/> Select Strategy</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-card-foreground"><Settings2 className="h-5 w-5 text-primary" /> Select Strategy</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[calc(100vh-26rem)] pr-3">
@@ -238,13 +238,13 @@ export default function SettingsPage() {
               <>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-card-foreground">
-                    {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary"/>}
+                    {selectedStrategy.icon && <selectedStrategy.icon className="h-6 w-6 text-primary" />}
                     {selectedStrategy.name}
                   </CardTitle>
                   <CardDescription className="pt-1 text-muted-foreground">{selectedStrategy.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div> 
+                  <div>
                     <h3 className="text-lg font-semibold mb-3 text-card-foreground">Default Inputs Configuration</h3>
                     {configurableParameters.length > 0 ? (
                       configurableParameters.map(param => (
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                       <p className="text-sm text-muted-foreground">This strategy has no parameters that can be pre-configured with default values.</p>
                     )}
                   </div>
-                  
+
                   {configurableParameters.length > 0 && (
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border mt-4">
                       <Button onClick={handleSaveConfiguration} className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -272,7 +272,7 @@ export default function SettingsPage() {
                   {selectedStrategy.example && (
                     <div className="pt-6 mt-6 border-t border-border">
                       <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 text-card-foreground">
-                        <Info className="h-5 w-5 text-primary"/> Example Usage
+                        <Info className="h-5 w-5 text-primary" /> Example Usage
                       </h3>
                       <p className="text-sm text-muted-foreground mb-3">An example of how this strategy can be used.</p>
                       <div className="space-y-4">
@@ -294,7 +294,7 @@ export default function SettingsPage() {
                 </CardContent>
               </>
             ) : (
-               <CardHeader>
+              <CardHeader>
                 <CardTitle className="text-card-foreground">No Strategy Selected</CardTitle>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">Please select a strategy from the left panel to configure its default inputs and view its details.</p>
@@ -305,5 +305,15 @@ export default function SettingsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SettingPageWrapper() {
+  return (
+    <>
+      <Suspense fallback={<div>Loading...</div>}>
+        <SettingsPage />
+      </Suspense>
+    </>
   );
 }

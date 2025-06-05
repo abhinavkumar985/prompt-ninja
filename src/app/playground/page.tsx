@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PROMPT_STRATEGIES, PromptStrategy } from '@/lib/prompt-strategies';
 import useLocalStorage from '@/hooks/useLocalStorage';
@@ -34,7 +34,7 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
       value: strategy.example.inputs[p.name],
     }))
     .sort((a, b) => b.value.length - a.value.length); // Longer matches first
-  
+
   const regexParts = configurableParams.map(p =>
     p.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
   );
@@ -42,12 +42,12 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
   if (regexParts.length === 0 && !output) {
     return "No example available or no configurable parameters to highlight.";
   }
-  
+
   if (regexParts.length === 0 && output) {
     return output;
   }
   if (regexParts.length === 0) {
-      return "No example available or no configurable parameters to highlight.";
+    return "No example available or no configurable parameters to highlight.";
   }
 
   const regex = new RegExp(`(${regexParts.join('|')})`, 'g');
@@ -72,7 +72,7 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
 }
 
 
-export default function PlaygroundPage() {
+function PlaygroundPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -100,7 +100,7 @@ export default function PlaygroundPage() {
     }
     return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
   });
-  
+
   // Effect for initial sorting and selection refinement on client-side
   useEffect(() => {
     // strategyUsage from useLocalStorage is available and up-to-date here on client mount
@@ -127,19 +127,19 @@ export default function PlaygroundPage() {
       // If the current selection is not in the sorted list (e.g. was default and list sorted),
       // or if no selection yet, pick the first from sorted.
       if (!newSelectedId || !clientSorted.find(s => s.id === newSelectedId)) {
-         newSelectedId = clientSorted[0].id;
+        newSelectedId = clientSorted[0].id;
       }
     } else {
       newSelectedId = null; // No strategies available
     }
-    
+
     // Only update if the derived selection is different from the current state
     if (newSelectedId !== selectedStrategyId) {
-        setSelectedStrategyId(newSelectedId);
+      setSelectedStrategyId(newSelectedId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array: runs only once on client mount.
-            // strategyUsage and searchParams are accessed from the closure with their initial client values.
+  // strategyUsage and searchParams are accessed from the closure with their initial client values.
 
   const selectedStrategy = useMemo(() => {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
@@ -172,7 +172,7 @@ export default function PlaygroundPage() {
     } else {
       setInputValues({ main_input: inputValues.main_input || '' });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStrategy, allStrategyConfigs]);
 
 
@@ -253,7 +253,7 @@ export default function PlaygroundPage() {
               onChange={e => handleInputChange('main_input', e.target.value)}
               className="w-full bg-input border-border rounded-lg p-4 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
               placeholder="Paste your code snippet, error message, or question here..."
-              rows={selectedStrategy?.parameters.find(p=>p.name === 'main_input')?.rows || 8}
+              rows={selectedStrategy?.parameters.find(p => p.name === 'main_input')?.rows || 8}
             />
 
             <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em] pt-4">Select a technique</h3>
@@ -316,17 +316,17 @@ export default function PlaygroundPage() {
           {/* Right Column */}
           <section className="flex flex-col gap-4 p-4 bg-card rounded-lg relative">
             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
-                <Button
-                    onClick={handleCopyPrompt}
-                    disabled={!generatedPrompt}
-                    variant="default"
-                    size="sm"
-                    className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                    <span className="material-icons text-base mr-1.5">content_copy</span>
-                    Copy
-                </Button>
+              <h3 className="text-xl font-semibold leading-tight tracking-[-0.015em]">Generated Prompt</h3>
+              <Button
+                onClick={handleCopyPrompt}
+                disabled={!generatedPrompt}
+                variant="default"
+                size="sm"
+                className="font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <span className="material-icons text-base mr-1.5">content_copy</span>
+                Copy
+              </Button>
             </div>
             <div className="bg-background border-border rounded-lg p-4 min-h-[200px] text-muted-foreground text-sm whitespace-pre-wrap overflow-auto flex-grow">
               {generatedPrompt || "Your generated prompt will appear here..."}
@@ -335,5 +335,15 @@ export default function PlaygroundPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PlaygroundPageWrapper() {
+  return (
+    <>
+      <Suspense fallback={<div>Loading...</div>}>
+        <PlaygroundPage />
+      </Suspense>
+    </>
   );
 }

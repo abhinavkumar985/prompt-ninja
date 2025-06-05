@@ -7,6 +7,7 @@ import {
   Repeat, // For Convert Code
   FlaskConical, // For Write Unit Tests
   FileText, // For Generate JSDoc Comments
+  Zap, // For Optimize Code
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -190,6 +191,21 @@ const strategiesInput: StrategyInputItem[] = [
     parameterDefaults: { language: "JavaScript" },
     additionalParameters: [
       { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., TypeScript" }
+    ]
+  },
+  {
+    name: "Optimize Code",
+    templateString: "Optimize the following ${language} code for ${goal}:\n\n${main_input}",
+    description: "Makes performance or memory improvements based on a specified optimization goal.",
+    shortDescription: "Make code faster or smaller.",
+    icon: Zap,
+    category: "Performance",
+    imagePlaceholderKeywords: "code optimization",
+    configurableParameterNames: ["language", "goal"],
+    parameterDefaults: { language: "Go", goal: "runtime performance" },
+    additionalParameters: [
+      { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., Go, Rust" },
+      { name: "goal", label: "Optimization Goal", type: "text", placeholder: "e.g., memory usage, execution speed" }
     ]
   }
 ];

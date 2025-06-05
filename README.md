@@ -24,7 +24,7 @@
 
 ## 🧑‍💻 How to Use
 
-1. Visit the [Playground](https://promptnin.vercel.app/playground).
+1. Visit the [Playground](https://prompt-ninja-cyan.vercel.app/playground).
 2. Paste your code, bug, or question.
 3. Select a strategy (e.g., **Role Prompting**).
 4. Instantly receive a tailored prompt for your AI assistant.
@@ -92,7 +92,7 @@ MIT License © 2025 PromptNin
 
 ## 🔗 Links
 
-- 🌐 [Website](https://promptnin.vercel.app)  
+- 🌐 [Website](https://prompt-ninja-cyan.vercel.app/)  
 - 🐙 [GitHub](https://github.com/abhinavkumar985/prompt-ninja)  
 - 🐦 [Twitter / X](https://x.com/abhinav985)  
 

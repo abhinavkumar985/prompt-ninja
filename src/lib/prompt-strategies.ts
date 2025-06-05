@@ -2,6 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   User, // For Role Prompting
+  MessageSquareText, // For Explain Code
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -113,7 +114,21 @@ const strategiesInput: StrategyInputItem[] = [
       { name: 'goal', label: 'Goal of Review/Task', type: 'text', placeholder: 'e.g., identify bugs, improve performance' },
     ]
   },
-  // All other strategies have been removed
+  {
+    name: "Explain Code",
+    templateString: "Explain the following ${language} code in simple terms for a ${audience}:\n\n${main_input}",
+    description: "Ask the AI to explain complex code clearly by specifying the programming language and target audience level (e.g., junior devs, students).",
+    shortDescription: "Explain code to someone specific.",
+    icon: MessageSquareText,
+    category: "Education",
+    imagePlaceholderKeywords: "code explanation",
+    configurableParameterNames: ["language", "audience"],
+    parameterDefaults: { language: "JavaScript", audience: "junior developer" },
+    additionalParameters: [
+      { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., Python, Go" },
+      { name: "audience", label: "Audience Level", type: "text", placeholder: "e.g., beginner, student" }
+    ]
+  }
 ];
 
 export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
@@ -160,3 +175,4 @@ export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
     imagePlaceholderKeywords: item.imagePlaceholderKeywords,
   };
 });
+

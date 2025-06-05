@@ -10,7 +10,7 @@ import { Menu, Github, Settings, Wand2, Handshake } from 'lucide-react'; // Adde
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
-export const GITHUB_REPO_URL = "https://github.com/FirebaseExtended/promptcraft"; // Placeholder, update this
+export const GITHUB_REPO_URL = "https://github.com/abhinavkumar985/prompt-ninja"; // Placeholder, update this
 
 const navItems = [
   { href: '/playground', label: 'Playground', icon: Wand2 },
@@ -70,16 +70,7 @@ export function Header() {
           <GithubIconSvg />
         </Link>
 
-        <div className="relative h-9 w-9">
-          <Image
-            src="https://placehold.co/36x36.png"
-            alt="User avatar"
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint="avatar user"
-            className="rounded-full border-2 border-secondary group-hover:border-primary transition-colors"
-          />
-        </div>
+        
 
         {/* Mobile Menu Button */}
         <div className="sm:hidden">

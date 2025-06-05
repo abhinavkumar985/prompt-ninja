@@ -6,7 +6,7 @@ const footerNavItems = [
   { href: '/playground', label: 'Playground' },
   { href: '/contribution-guide', label: 'Contribute' },
   { href: GITHUB_REPO_URL, label: 'GitHub', target: '_blank' },
-  { href: '#', label: 'X (Twitter)', target: '_blank' }, // Placeholder for Twitter, you can update this URL
+  { href: 'https://x.com/abhinav985', label: 'X (Twitter)', target: '_blank' }, // Placeholder for Twitter, you can update this URL
 ];
 
 export function Footer() {

@@ -11,7 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// import type { LucideIcon } from 'lucide-react'; // No longer needed here
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -88,20 +87,23 @@ export default function PlaygroundPage() {
     {}
   );
 
-  // Initialize with default order for SSR and initial client render
+  // Initialize with default order. Client-side effect will sort it based on usage.
   const [sortedStrategies, setSortedStrategies] = useState<PromptStrategy[]>([...PROMPT_STRATEGIES]);
 
-  // Initialize selectedStrategyId based on query or first of default PROMPT_STRATEGIES
+  // Initialize selectedStrategyId. Client-side effect will refine it based on sorted list and query.
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    // For initial render (SSR/client), try to get from query or default to first PROMPT_STRATEGIES item.
+    // This ensures consistency before client-side effect runs.
     const strategyIdFromQuery = searchParams.get('strategy');
     if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
       return strategyIdFromQuery;
     }
     return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
   });
-
-  // Client-side effect to sort strategies and update selection if necessary
+  
+  // Effect for initial sorting and selection refinement on client-side
   useEffect(() => {
+    // strategyUsage from useLocalStorage is available and up-to-date here on client mount
     const clientSorted = [...PROMPT_STRATEGIES].sort((a, b) => {
       const usageA = strategyUsage[a.id];
       const usageB = strategyUsage[b.id];
@@ -113,29 +115,31 @@ export default function PlaygroundPage() {
       }
       return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b); // Fallback to original order
     });
-    setSortedStrategies(clientSorted);
+    setSortedStrategies(clientSorted); // Set the sorted list for rendering
 
-    // If no strategy was from query params, update selected ID to the first of the newly sorted list.
+    // Refine selectedStrategyId based on the now-sorted list and query parameters
     const strategyIdFromQuery = searchParams.get('strategy');
-    if (!strategyIdFromQuery && clientSorted.length > 0) {
-      // Only update if the current selected one is not in the new sorted list or if it's different
-      if (selectedStrategyId !== clientSorted[0].id) {
-         setSelectedStrategyId(clientSorted[0].id);
+    let newSelectedId = selectedStrategyId; // Start with current, possibly from initial useState
+
+    if (strategyIdFromQuery && clientSorted.find(s => s.id === strategyIdFromQuery)) {
+      newSelectedId = strategyIdFromQuery;
+    } else if (clientSorted.length > 0) {
+      // If the current selection is not in the sorted list (e.g. was default and list sorted),
+      // or if no selection yet, pick the first from sorted.
+      if (!newSelectedId || !clientSorted.find(s => s.id === newSelectedId)) {
+         newSelectedId = clientSorted[0].id;
       }
-    } else if (strategyIdFromQuery && clientSorted.find(s => s.id === strategyIdFromQuery)) {
-      // If query param exists and is valid in the sorted list, ensure it's selected
-      if (selectedStrategyId !== strategyIdFromQuery) {
-        setSelectedStrategyId(strategyIdFromQuery);
-      }
-    } else if (clientSorted.length > 0 && !clientSorted.find(s => s.id === selectedStrategyId)) {
-      // If current selected ID is no longer valid (e.g. after sorting and no query param), pick the first.
-      setSelectedStrategyId(clientSorted[0].id);
-    } else if (clientSorted.length === 0) {
-      setSelectedStrategyId(null);
+    } else {
+      newSelectedId = null; // No strategies available
+    }
+    
+    // Only update if the derived selection is different from the current state
+    if (newSelectedId !== selectedStrategyId) {
+        setSelectedStrategyId(newSelectedId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strategyUsage, searchParams]); // Rerun when usage data or searchParams change
-
+  }, []); // Empty dependency array: runs only once on client mount.
+            // strategyUsage and searchParams are accessed from the closure with their initial client values.
 
   const selectedStrategy = useMemo(() => {
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
@@ -177,9 +181,11 @@ export default function PlaygroundPage() {
   };
 
   const handleStrategyChange = (strategyId: string) => {
-    setSelectedStrategyId(strategyId);
-    router.push(`/playground?strategy=${strategyId}`, { scroll: false });
+    setSelectedStrategyId(strategyId); // Update selection state
+    router.push(`/playground?strategy=${strategyId}`, { scroll: false }); // Update URL
 
+    // Update usage data in localStorage; this will cause strategyUsage (from hook) to update
+    // but will NOT re-trigger the sorting useEffect as it has an empty dependency array.
     setStrategyUsage(prevUsage => {
       const currentStrategyUsage = prevUsage[strategyId] || { count: 0, lastUsed: 0 };
       return {

@@ -34,15 +34,15 @@ export default function SettingsPage() {
     {}
   );
 
-  const [strategyUsage] = useLocalStorage<StrategyUsageData>(
+  const [strategyUsage] = useLocalStorage<StrategyUsageData>( // No setStrategyUsage needed here, only reading
     'promptnin-strategy-usage',
     {}
   );
 
-  // Initialize with default order for SSR and initial client render
+  // Initialize with default order. Client-side effect will sort it.
   const [sortedStrategies, setSortedStrategies] = useState<PromptStrategy[]>([...PROMPT_STRATEGIES]);
   
-  // Initialize selectedStrategyId based on query or first of default PROMPT_STRATEGIES
+  // Initialize selectedStrategyId. Client-side effect will refine it.
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
     const strategyIdFromQuery = searchParams.get('strategy');
     if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
@@ -51,7 +51,7 @@ export default function SettingsPage() {
     return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
   });
 
-  // Client-side effect to sort strategies and update selection if necessary
+  // Effect for initial sorting and selection refinement on client-side
   useEffect(() => {
     const clientSorted = [...PROMPT_STRATEGIES].sort((a, b) => {
       const usageA = strategyUsage[a.id];
@@ -67,26 +67,29 @@ export default function SettingsPage() {
     setSortedStrategies(clientSorted);
     
     const strategyIdFromQuery = searchParams.get('strategy');
+    let newSelectedId = selectedStrategyId;
+
     if (strategyIdFromQuery && clientSorted.find(s => s.id === strategyIdFromQuery)) {
-      if (selectedStrategyId !== strategyIdFromQuery) {
-        setSelectedStrategyId(strategyIdFromQuery);
+      newSelectedId = strategyIdFromQuery;
+    } else if (clientSorted.length > 0) {
+      if (!newSelectedId || !clientSorted.find(s => s.id === newSelectedId)) {
+        newSelectedId = clientSorted[0].id;
       }
-    } else if (!strategyIdFromQuery && clientSorted.length > 0) {
-      if (selectedStrategyId !== clientSorted[0].id) {
-        setSelectedStrategyId(clientSorted[0].id);
-      }
-    } else if (clientSorted.length > 0 && !clientSorted.find(s => s.id === selectedStrategyId)) {
-      setSelectedStrategyId(clientSorted[0].id);
-    } else if (clientSorted.length === 0) {
-      setSelectedStrategyId(null);
+    } else {
+      newSelectedId = null;
+    }
+
+    if (newSelectedId !== selectedStrategyId) {
+        setSelectedStrategyId(newSelectedId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strategyUsage, searchParams]);
+  }, []); // Empty dependency array: runs only once on client mount
 
 
   const [currentFormValues, setCurrentFormValues] = useState<Record<string, string>>({});
 
   const selectedStrategy = useMemo(() => {
+    // Find in the original PROMPT_STRATEGIES list to ensure stability if sortedStrategies is not yet updated
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
@@ -108,6 +111,12 @@ export default function SettingsPage() {
   useEffect(() => {
     document.title = 'Strategy Defaults - PromptNin';
   }, []);
+
+  const handleStrategySelection = (strategyId: string) => {
+    setSelectedStrategyId(strategyId);
+    // Note: Unlike Playground, we don't update usage stats here as it's primarily for configuration.
+    // Also, not changing URL query params on selection within the settings page itself.
+  };
 
   const handleInputChange = (paramName: string, value: string) => {
     setCurrentFormValues(prev => ({ ...prev, [paramName]: value }));
@@ -209,7 +218,7 @@ export default function SettingsPage() {
                     <Button
                       key={strategy.id}
                       variant="ghost"
-                      onClick={() => setSelectedStrategyId(strategy.id)}
+                      onClick={() => handleStrategySelection(strategy.id)} // Use new handler
                       className={cn(
                         "w-full justify-start text-left h-auto py-2 px-3 text-card-foreground hover:bg-secondary/80 hover:text-accent",
                         selectedStrategyId === strategy.id ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""

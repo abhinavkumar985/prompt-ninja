@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   User, // For Role Prompting
   MessageSquareText, // For Explain Code
+  Wrench, // For Refactor Code
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -127,6 +128,21 @@ const strategiesInput: StrategyInputItem[] = [
     additionalParameters: [
       { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., Python, Go" },
       { name: "audience", label: "Audience Level", type: "text", placeholder: "e.g., beginner, student" }
+    ]
+  },
+  {
+    name: "Refactor Code",
+    templateString: "Refactor the following ${language} code to improve ${goal}:\n\n${main_input}",
+    description: "Helps improve code quality by requesting refactoring for a specific goal such as readability, modularity, or performance.",
+    shortDescription: "Refactor code with a specific goal.",
+    icon: Wrench,
+    category: "Optimization",
+    imagePlaceholderKeywords: "code refactoring",
+    configurableParameterNames: ["language", "goal"],
+    parameterDefaults: { language: "TypeScript", goal: "readability and maintainability" },
+    additionalParameters: [
+      { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., Java, Rust" },
+      { name: "goal", label: "Refactor Goal", type: "text", placeholder: "e.g., simplify logic, improve structure" }
     ]
   }
 ];

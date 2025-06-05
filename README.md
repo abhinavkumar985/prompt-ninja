@@ -48,6 +48,7 @@ PromptNin is built with [Next.js](https://nextjs.org/) and styled using [Tailwin
 git clone https://github.com/your-username/promptnin.git
 cd promptnin
 npm install # or yarn install
+```
 
 # Start local dev server
 npm run dev # or yarn dev
@@ -92,7 +93,7 @@ MIT License © 2025 PromptNin
 ## 🔗 Links
 
 - 🌐 [Website](https://promptnin.vercel.app)  
-- 🐙 [GitHub](https://github.com/your-username/promptnin)  
-- 🐦 [Twitter / X](https://twitter.com/your-handle)  
+- 🐙 [GitHub](https://github.com/abhinavkumar985/prompt-ninja)  
+- 🐦 [Twitter / X](https://x.com/abhinav985)  
 
 > **Prompt smarter. Code faster. Stay private.**

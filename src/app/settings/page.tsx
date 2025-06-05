@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Save, SlidersHorizontal, Settings2, RotateCcw, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useSearchParams } from 'next/navigation'; 
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -27,7 +27,7 @@ type StrategyUsageData = {
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const searchParams = useSearchParams(); // For reading query params
+  const searchParams = useSearchParams(); 
 
   const [allStrategyConfigs, setAllStrategyConfigs] = useLocalStorage<StrategyConfigurations>(
     'promptnin-strategy-configurations',
@@ -39,33 +39,54 @@ export default function SettingsPage() {
     {}
   );
 
-  const sortedStrategies = useMemo(() => {
-    return [...PROMPT_STRATEGIES].sort((a, b) => {
+  // Initialize with default order for SSR and initial client render
+  const [sortedStrategies, setSortedStrategies] = useState<PromptStrategy[]>([...PROMPT_STRATEGIES]);
+  
+  // Initialize selectedStrategyId based on query or first of default PROMPT_STRATEGIES
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    const strategyIdFromQuery = searchParams.get('strategy');
+    if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
+      return strategyIdFromQuery;
+    }
+    return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
+  });
+
+  // Client-side effect to sort strategies and update selection if necessary
+  useEffect(() => {
+    const clientSorted = [...PROMPT_STRATEGIES].sort((a, b) => {
       const usageA = strategyUsage[a.id];
       const usageB = strategyUsage[b.id];
-
       const lastUsedA = usageA?.lastUsed || 0;
       const lastUsedB = usageB?.lastUsed || 0;
 
       if (lastUsedA !== lastUsedB) {
-        return lastUsedB - lastUsedA; // Sort by most recent first
+        return lastUsedB - lastUsedA;
       }
       return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b);
     });
-  }, [strategyUsage]);
-
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    setSortedStrategies(clientSorted);
+    
     const strategyIdFromQuery = searchParams.get('strategy');
-    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
-      return strategyIdFromQuery;
+    if (strategyIdFromQuery && clientSorted.find(s => s.id === strategyIdFromQuery)) {
+      if (selectedStrategyId !== strategyIdFromQuery) {
+        setSelectedStrategyId(strategyIdFromQuery);
+      }
+    } else if (!strategyIdFromQuery && clientSorted.length > 0) {
+      if (selectedStrategyId !== clientSorted[0].id) {
+        setSelectedStrategyId(clientSorted[0].id);
+      }
+    } else if (clientSorted.length > 0 && !clientSorted.find(s => s.id === selectedStrategyId)) {
+      setSelectedStrategyId(clientSorted[0].id);
+    } else if (clientSorted.length === 0) {
+      setSelectedStrategyId(null);
     }
-    return sortedStrategies.length > 0 ? sortedStrategies[0].id : null;
-  });
-  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategyUsage, searchParams]);
+
+
   const [currentFormValues, setCurrentFormValues] = useState<Record<string, string>>({});
 
   const selectedStrategy = useMemo(() => {
-    // Find from original PROMPT_STRATEGIES to ensure correct object reference
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
@@ -87,18 +108,6 @@ export default function SettingsPage() {
   useEffect(() => {
     document.title = 'Strategy Defaults - PromptNin';
   }, []);
-
-  // Effect to update selectedStrategyId if query param changes
-  useEffect(() => {
-    const strategyIdFromQuery = searchParams.get('strategy');
-    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
-      if (selectedStrategyId !== strategyIdFromQuery) {
-        setSelectedStrategyId(strategyIdFromQuery);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, sortedStrategies]);
-
 
   const handleInputChange = (paramName: string, value: string) => {
     setCurrentFormValues(prev => ({ ...prev, [paramName]: value }));
@@ -289,4 +298,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-

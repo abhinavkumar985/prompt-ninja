@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { LucideIcon } from 'lucide-react';
+// import type { LucideIcon } from 'lucide-react'; // No longer needed here
 
 type StrategyConfigurations = Record<string, Record<string, string>>;
 
@@ -44,13 +44,12 @@ function generateHighlightedExamplePrompt(strategy: PromptStrategy): React.React
     return "No example available or no configurable parameters to highlight.";
   }
   
-  if (regexParts.length === 0 && output) { // check output before returning it raw
+  if (regexParts.length === 0 && output) {
     return output;
   }
-  if (regexParts.length === 0) { // if still no regexParts and no output (covered above)
+  if (regexParts.length === 0) {
       return "No example available or no configurable parameters to highlight.";
   }
-
 
   const regex = new RegExp(`(${regexParts.join('|')})`, 'g');
   let match;
@@ -89,34 +88,56 @@ export default function PlaygroundPage() {
     {}
   );
 
-  const sortedStrategies = useMemo(() => {
-    return [...PROMPT_STRATEGIES].sort((a, b) => {
+  // Initialize with default order for SSR and initial client render
+  const [sortedStrategies, setSortedStrategies] = useState<PromptStrategy[]>([...PROMPT_STRATEGIES]);
+
+  // Initialize selectedStrategyId based on query or first of default PROMPT_STRATEGIES
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    const strategyIdFromQuery = searchParams.get('strategy');
+    if (strategyIdFromQuery && PROMPT_STRATEGIES.find(s => s.id === strategyIdFromQuery)) {
+      return strategyIdFromQuery;
+    }
+    return PROMPT_STRATEGIES.length > 0 ? PROMPT_STRATEGIES[0].id : null;
+  });
+
+  // Client-side effect to sort strategies and update selection if necessary
+  useEffect(() => {
+    const clientSorted = [...PROMPT_STRATEGIES].sort((a, b) => {
       const usageA = strategyUsage[a.id];
       const usageB = strategyUsage[b.id];
-
       const lastUsedA = usageA?.lastUsed || 0;
       const lastUsedB = usageB?.lastUsed || 0;
 
       if (lastUsedA !== lastUsedB) {
         return lastUsedB - lastUsedA; // Sort by most recent first
       }
-      // Optional: secondary sort by count or original order if lastUsed is same (e.g., both unused)
-      // For now, if lastUsed is same, maintain original relative order (implicit in stable sort or by index)
-      return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b);
+      return PROMPT_STRATEGIES.indexOf(a) - PROMPT_STRATEGIES.indexOf(b); // Fallback to original order
     });
-  }, [strategyUsage]);
+    setSortedStrategies(clientSorted);
 
-
-  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(() => {
+    // If no strategy was from query params, update selected ID to the first of the newly sorted list.
     const strategyIdFromQuery = searchParams.get('strategy');
-    if (strategyIdFromQuery && sortedStrategies.find(s => s.id === strategyIdFromQuery)) {
-      return strategyIdFromQuery;
+    if (!strategyIdFromQuery && clientSorted.length > 0) {
+      // Only update if the current selected one is not in the new sorted list or if it's different
+      if (selectedStrategyId !== clientSorted[0].id) {
+         setSelectedStrategyId(clientSorted[0].id);
+      }
+    } else if (strategyIdFromQuery && clientSorted.find(s => s.id === strategyIdFromQuery)) {
+      // If query param exists and is valid in the sorted list, ensure it's selected
+      if (selectedStrategyId !== strategyIdFromQuery) {
+        setSelectedStrategyId(strategyIdFromQuery);
+      }
+    } else if (clientSorted.length > 0 && !clientSorted.find(s => s.id === selectedStrategyId)) {
+      // If current selected ID is no longer valid (e.g. after sorting and no query param), pick the first.
+      setSelectedStrategyId(clientSorted[0].id);
+    } else if (clientSorted.length === 0) {
+      setSelectedStrategyId(null);
     }
-    return sortedStrategies.length > 0 ? sortedStrategies[0].id : null;
-  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategyUsage, searchParams]); // Rerun when usage data or searchParams change
+
 
   const selectedStrategy = useMemo(() => {
-    // Find from the original PROMPT_STRATEGIES to ensure we get the correct object reference if needed elsewhere
     return PROMPT_STRATEGIES.find(s => s.id === selectedStrategyId) || null;
   }, [selectedStrategyId]);
 
@@ -159,7 +180,6 @@ export default function PlaygroundPage() {
     setSelectedStrategyId(strategyId);
     router.push(`/playground?strategy=${strategyId}`, { scroll: false });
 
-    // Update usage stats
     setStrategyUsage(prevUsage => {
       const currentStrategyUsage = prevUsage[strategyId] || { count: 0, lastUsed: 0 };
       return {
@@ -311,4 +331,3 @@ export default function PlaygroundPage() {
     </main>
   );
 }
-

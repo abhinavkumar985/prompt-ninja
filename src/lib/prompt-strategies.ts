@@ -5,6 +5,7 @@ import {
   MessageSquareText, // For Explain Code
   Wrench, // For Refactor Code
   Repeat, // For Convert Code
+  FlaskConical, // For Write Unit Tests
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -160,6 +161,21 @@ const strategiesInput: StrategyInputItem[] = [
       { name: "source_lang", label: "Source Language", type: "text", placeholder: "e.g., JavaScript" },
       { name: "target_lang", label: "Target Language", type: "text", placeholder: "e.g., Python" }
     ]
+  },
+  {
+    name: "Write Unit Tests",
+    templateString: "Write unit tests for the following ${language} function using ${framework}:\n\n${main_input}",
+    description: "Generates unit tests for provided code by specifying language and preferred test framework (e.g., Jest, Mocha).",
+    shortDescription: "Generate test cases.",
+    icon: FlaskConical,
+    category: "Testing",
+    imagePlaceholderKeywords: "unit testing",
+    configurableParameterNames: ["language", "framework"],
+    parameterDefaults: { language: "JavaScript", framework: "Jest" },
+    additionalParameters: [
+      { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., JavaScript" },
+      { name: "framework", label: "Testing Framework", type: "text", placeholder: "e.g., Jest, Mocha" }
+    ]
   }
 ];
 
@@ -207,3 +223,4 @@ export const PROMPT_STRATEGIES: PromptStrategy[] = strategiesInput.map(item => {
     imagePlaceholderKeywords: item.imagePlaceholderKeywords,
   };
 });
+

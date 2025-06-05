@@ -6,6 +6,7 @@ import {
   Wrench, // For Refactor Code
   Repeat, // For Convert Code
   FlaskConical, // For Write Unit Tests
+  FileText, // For Generate JSDoc Comments
   // Other icons can be removed if not used by Role Prompting
 } from 'lucide-react';
 
@@ -175,6 +176,20 @@ const strategiesInput: StrategyInputItem[] = [
     additionalParameters: [
       { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., JavaScript" },
       { name: "framework", label: "Testing Framework", type: "text", placeholder: "e.g., Jest, Mocha" }
+    ]
+  },
+  {
+    name: "Generate JSDoc Comments",
+    templateString: "Add proper JSDoc comments to the following ${language} code:\n\n${main_input}",
+    description: "Inserts structured documentation into code using the JSDoc format to improve maintainability and editor support.",
+    shortDescription: "Document functions with JSDoc.",
+    icon: FileText,
+    category: "Documentation",
+    imagePlaceholderKeywords: "code documentation",
+    configurableParameterNames: ["language"],
+    parameterDefaults: { language: "JavaScript" },
+    additionalParameters: [
+      { name: "language", label: "Programming Language", type: "text", placeholder: "e.g., TypeScript" }
     ]
   }
 ];
